@@ -29,6 +29,7 @@ DATABASES = {
     }
 }
 
+DATABASE_ROUTERS = ['evedb.router.EveDBRouter']
 
 # Eve API setting 
 # This must be a full API key from your CEO or any Director otherwise 
@@ -136,6 +137,7 @@ TEMPLATE_DIRS = (
 
 INSTALLED_APPS = (
 	'assets',
+	'evedb,'
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
