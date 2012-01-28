@@ -11,21 +11,21 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE'    : 	'django.db.backends.mysql', 	# Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME'      : 	'',	                          	# Or path to database file if using sqlite3.
-        'USER'      : 	'',     	                   	# Not used with sqlite3.
-        'PASSWORD'  : 	'',	        	             	# Not used with sqlite3.
-        'HOST'      : 	'localhost',                   	# Set to empty string for localhost. Not used with sqlite3.
-        'PORT'      : 	'3306',                      	# Set to empty string for default. Not used with sqlite3.
+        'ENGINE'    :   'django.db.backends.mysql',     # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME'      :   '',                             # Or path to database file if using sqlite3.
+        'USER'      :   '',                             # Not used with sqlite3.
+        'PASSWORD'  :   '',                             # Not used with sqlite3.
+        'HOST'      :   'localhost',                    # Set to empty string for localhost. Not used with sqlite3.
+        'PORT'      :   '3306',                         # Set to empty string for default. Not used with sqlite3.
     },
     
     'eveapi': {
-        'ENGINE'    : 	'django.db.backends.mysql', 	# Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME'      : 	'',	                          	# Or path to database file if using sqlite3.
-        'USER'      : 	'',     	                   	# Not used with sqlite3.
-        'PASSWORD'  : 	'',	        	             	# Not used with sqlite3.
-        'HOST'      : 	'localhost',                   	# Set to empty string for localhost. Not used with sqlite3.
-        'PORT'      : 	'3306',                      	# Set to empty string for default. Not used with sqlite3.
+        'ENGINE'    :   'django.db.backends.mysql',     # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME'      :   '',                             # Or path to database file if using sqlite3.
+        'USER'      :   '',                             # Not used with sqlite3.
+        'PASSWORD'  :   '',                             # Not used with sqlite3.
+        'HOST'      :   'localhost',                    # Set to empty string for localhost. Not used with sqlite3.
+        'PORT'      :   '3306',                         # Set to empty string for default. Not used with sqlite3.
     }
 }
 
@@ -39,10 +39,10 @@ DATABASES = {
 # Don't commit a working full API key to a pulic place
 
 EVEAPI = {
-	'APIURL': 'api.eveonline.com',
-	'USERID': '', 
-	'APIKEY': '',
-	'CHARID': ''
+    'APIURL': 'api.eveonline.com',
+    'USERID': '', 
+    'APIKEY': '',
+    'CHARID': ''
 }
 
 # Local time zone for this installation. Choices can be found here:
