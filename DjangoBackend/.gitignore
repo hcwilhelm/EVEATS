@@ -1,9 +1,0 @@
-# Compiled Source #
-###################
-
-*.pyc
-
-# Sensetive Data #
-##################
-
-settings.py
