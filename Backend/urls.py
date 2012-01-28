@@ -27,6 +27,8 @@ urlpatterns = patterns('',
     (r'^assets/listCorpAssets/(?P<groupID>\d+)/$', 'assets.views.listCorpAssets'),
     (r'^assets/getTreeForTypeID/(?P<ID>\d+)/$', 'assets.views.getTreeForTypeID'),
     (r'^assets/listCorpAssetsByName/$', 'assets.views.listCorpAssetsByName'),
+    (r'^accounts/registerAccount/$', 'accounts.manage.registerAccount'),
+    (r'^accounts/listAccounts/$', 'accounts.views.listAccounts'),
 )
 
 urlpatterns += staticfiles_urlpatterns()

@@ -126,7 +126,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-ROOT_URLCONF = 'EVEATS.urls'
+ROOT_URLCONF = 'Backend.urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -135,7 +135,11 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
-	'assets',
+    # own apps
+    'assets',
+    'eveapi',
+    'accounts'
+    # django stuff
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
