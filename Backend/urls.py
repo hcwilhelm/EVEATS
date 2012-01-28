@@ -15,20 +15,18 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     # url(r'^admin/', include(admin.site.urls)),
-	
-	# ==========================================
-	# = MarketGroup hierarchy as Json response =
-	# ==========================================
-	(r'^assets/marketGroups/$', 'assets.views.marketGroups'),
-	(r'^assets/marketGroups/(?P<id>\d+)/$', 'assets.views.marketGroups'),
-	(r'^assets/listEveIcons/$', 'assets.views.listEveIcons'),
-	(r'^assets/listEveIcons/(?P<id>\d+)/$', 'assets.views.listEveIcons'),
-	(r'^assets/listCorpAssets/$', 'assets.views.listCorpAssets'),
-	(r'^assets/listCorpAssets/(?P<groupID>\d+)/$', 'assets.views.listCorpAssets'),
-	(r'^assets/getTreeForTypeID/(?P<ID>\d+)/$', 'assets.views.getTreeForTypeID'),
-	(r'^assets/listCorpAssetsByName/$', 'assets.views.listCorpAssetsByName'),
-	
-	
+
+    # ==========================================
+    # = MarketGroup hierarchy as Json response =
+    # ==========================================
+    (r'^assets/marketGroups/$', 'assets.views.marketGroups'),
+    (r'^assets/marketGroups/(?P<id>\d+)/$', 'assets.views.marketGroups'),
+    (r'^assets/listEveIcons/$', 'assets.views.listEveIcons'),
+    (r'^assets/listEveIcons/(?P<id>\d+)/$', 'assets.views.listEveIcons'),
+    (r'^assets/listCorpAssets/$', 'assets.views.listCorpAssets'),
+    (r'^assets/listCorpAssets/(?P<groupID>\d+)/$', 'assets.views.listCorpAssets'),
+    (r'^assets/getTreeForTypeID/(?P<ID>\d+)/$', 'assets.views.getTreeForTypeID'),
+    (r'^assets/listCorpAssetsByName/$', 'assets.views.listCorpAssetsByName'),
 )
 
 urlpatterns += staticfiles_urlpatterns()
