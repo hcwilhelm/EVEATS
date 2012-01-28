@@ -1,0 +1,11 @@
+# Compiled Source #
+###################
+
+*.pyc
+._*.*
+.DS_Store
+
+# Sensetive Data #
+##################
+
+settings.py
