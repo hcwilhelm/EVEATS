@@ -5,8 +5,6 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.core import serializers
 
-import sys
-
 def registerAccount(request):
     serializer = serializers.get_serializer("json")()
     response = HttpResponse(mimetype='application/json')
