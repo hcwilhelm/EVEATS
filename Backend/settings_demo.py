@@ -19,7 +19,7 @@ DATABASES = {
         'PORT'      :   '3306',                         # Set to empty string for default. Not used with sqlite3.
     },
     
-    'eveapi': {
+    'evedb': {
         'ENGINE'    :   'django.db.backends.mysql',     # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
         'NAME'      :   '',                             # Or path to database file if using sqlite3.
         'USER'      :   '',                             # Not used with sqlite3.
