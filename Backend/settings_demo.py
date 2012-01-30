@@ -31,6 +31,15 @@ DATABASES = {
 
 DATABASE_ROUTERS = ['evedb.router.EveDBRouter']
 
+# E-Mail Settings
+EMAIL_BACKEND           = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST              = ''
+EMAIL_PORT              = 25
+EMAIL_USE_TLS           = False
+EMAIL_HOST_USER         = ''
+EMAIL_HOST_PASSWORD     = ''
+EMAIL_SUBJECT_PREFIX    = '[EVEATS]'
+
 # Eve API setting 
 # This must be a full API key from your CEO or any Director otherwise 
 # you can't import your corporations assets.
@@ -38,13 +47,19 @@ DATABASE_ROUTERS = ['evedb.router.EveDBRouter']
 # Security Warning 
 # You have to make sure that this information is keep private.
 # Don't commit a working full API key to a pulic place
-
 EVEAPI = {
     'APIURL': 'api.eveonline.com',
     'USERID': '', 
     'APIKEY': '',
     'CHARID': ''
 }
+
+# E-Mail Settings
+EMAIL_BACKEND           = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST              = 'mail.example.com'
+EMAIL_HOST_USER         = ''
+EMAIL_HOST_PASSWORD     = ''
+EMAIL_SUBJECT_PREFIX    = '[EVEATS]'
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -127,7 +142,12 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-ROOT_URLCONF = 'EVEATS.urls'
+ROOT_URLCONF = 'Backend.urls'
+
+# For userpasswords
+PASSWORD_HASHERS = (
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    )
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -138,9 +158,8 @@ TEMPLATE_DIRS = (
 INSTALLED_APPS = (
     # own apps
     'assets',
-    'accounts',
     'eveapi',
-    'evedb',
+    'accounts',
     # django stuff
     'django.contrib.auth',
     'django.contrib.contenttypes',
