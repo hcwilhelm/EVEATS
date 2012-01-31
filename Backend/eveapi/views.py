@@ -1,4 +1,4 @@
-from Backend.accounts.helper import *
+from Backend.helper import *
 from Backend.eveapi.models import EveApiKey
 
 from django.core import serializers

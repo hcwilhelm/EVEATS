@@ -1,4 +1,4 @@
-from Backend.accounts.helper import RequestResult
+from Backend.helper import RequestResult
 
 from django.contrib.auth.models import User
 from django.http import HttpResponse

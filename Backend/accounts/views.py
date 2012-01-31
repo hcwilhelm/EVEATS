@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib import auth
 from django.http import HttpResponse
 from django.core import serializers
-from Backend.accounts.helper import RequestResult
+from Backend.helper import RequestResult
 
 def listAccounts(request):
     serializer = serializers.get_serializer("json")()
