@@ -10,7 +10,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class EveApiKey(models.Model):
-    ID                  = models.BigIntegerField(primary_key=True)
-    verificationCode    = models.CharField(max_length=128)
-    comment             = models.CharField(max_length=512)
+    ccpID               = models.IntegerField(null=False)
+    verificationCode    = models.CharField(max_length=128, null=False)
+    comment             = models.CharField(max_length=512, null=True)
     owner               = models.ForeignKey(User)

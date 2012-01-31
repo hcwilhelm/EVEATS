@@ -36,6 +36,10 @@ urlpatterns = patterns('',
     (r'^accounts/login/$', 'accounts.views.login'),
     (r'^accounts/logout/$', 'accounts.views.logout'),
 
+    # eveapi app
+    (r'^eveapi/addApiKey/$', 'eveapi.views.addApiKey'),
+    (r'^eveapi/listApiKeys/$', 'eveapi.views.listApiKeys'),
+
 )
 
 urlpatterns += staticfiles_urlpatterns()

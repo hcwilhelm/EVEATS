@@ -16,3 +16,10 @@ class RequestResult():
 
     def __str__(self):
         return '[{"Success":%s, "ErrorCode":%d, "Message":"%s"}]' % (str(self.Success).lower(), self.ErrorCode, self.Message)
+
+def getHttpRequestParameter(request, parameter):
+    try:
+        result = request.REQUEST[parameter]
+    except KeyError:
+        result = None
+    return result
