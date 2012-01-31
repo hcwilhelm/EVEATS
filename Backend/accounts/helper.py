@@ -1,4 +1,4 @@
-class AccountOperationResult():
+class RequestResult():
     Success         = False
     ErrorCode       = 999
     Message    = ""
