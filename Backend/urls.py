@@ -29,7 +29,7 @@ urlpatterns = patterns('',
     (r'^assets/listCorpAssetsByName/$', 'assets.views.listCorpAssetsByName'),
 
     # accounts app
-    (r'^accounts/registerAccount/$', 'accounts.manage.registerAccount'),
+    (r'^accounts/register/$', 'accounts.views.register'),
     (r'^accounts/verifyEmailAddress/$', 'accounts.manage.verifyEmailAddress'),
     (r'^accounts/requestPassword/$', 'accounts.manage.verifyEmailAddress'),
     (r'^accounts/listAccounts/$', 'accounts.views.listAccounts'),

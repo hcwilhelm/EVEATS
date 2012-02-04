@@ -15,7 +15,7 @@ class RequestResult():
             self.Message = Message
 
     def __str__(self):
-        return '[{"Success":%s, "ErrorCode":%d, "Message":"%s"}]' % (str(self.Success).lower(), self.ErrorCode, self.Message)
+        return '{"Success":%s, "ErrorCode":%d, "Message":"%s"}' % (str(self.Success).lower(), self.ErrorCode, self.Message)
 
 def getHttpRequestParameter(request, parameter):
     try:
