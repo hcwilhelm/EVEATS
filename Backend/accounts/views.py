@@ -78,6 +78,11 @@ def register(request):
         message = ErrorMessage(False, "Missing GET paramater! Usage: ?email=&username=&password=&confirm=")
         response.write(message.json())
         return response
+    
+    if request.GET['username'] == "" or request.GET['password'] == "":
+        message = ErrorMessage(False, "Username and Password can't be empty")
+        response.write(message.json())
+        return response
 
     if User.objects.filter(username=request.GET['username']).exists():
         message = ErrorMessage(False, "Username allready exists!")
