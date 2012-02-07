@@ -25,9 +25,8 @@ LoginControllerLoginSuccessful = @"LoginControllerLoginSuccessful";
 // = Class LoginController =
 // =========================
 
-@implementation LoginController : CPObject
+@implementation LoginController : CPWindowController
 {
-  @outlet CPPanel       loginPanel;
   @outlet CPImageView   eveIconView;
   @outlet CPTextField   registerEmailTextField;
   @outlet CPTextField   registerUsernameTextField;
@@ -48,12 +47,8 @@ LoginControllerLoginSuccessful = @"LoginControllerLoginSuccessful";
 
 -(void)awakeFromCib
 {
-  console.log("loginController");
   _eveIcon = [[CPImage alloc] initWithContentsOfFile:"./Resources/eve.png"];
   [eveIconView setImage:_eveIcon];
-  
-  [loginPanel center];
-  [loginPanel setMovable:NO];
 }
 
 -(@action) login:(id)sender

@@ -1,7 +1,6 @@
 
-@interface LoginController : NSObject
+@interface LoginController : NSWindowController
 {
-    IBOutlet NSPanel* loginPanel;
     IBOutlet NSImageView* eveIconView;
     IBOutlet NSTextField* registerEmailTextField;
     IBOutlet NSTextField* registerUsernameTextField;

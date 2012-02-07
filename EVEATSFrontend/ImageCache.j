@@ -18,7 +18,7 @@ var charImageURL = "http://image.eveonline.com/Character/";
 // = Singleton =
 // =============
 
-ImageCache = [[ImageCache alloc] init];
+IMGCache = nil;
 
 // ====================
 // = Class ImageCache =
@@ -29,29 +29,44 @@ ImageCache = [[ImageCache alloc] init];
   CPDictionary _charImageDict;
 }
 
++(ImageCache)sharedCache
+{
+  if(!IMGCache)
+  {
+    IMGCache = [[ImageCache alloc] init];
+  }
+  
+  return IMGCache;
+}
+
 -(id) init
 {
   self = [super init];
   
-  _charImageDict = [CPDictionary dictionary];
+  IMGCache = self;
   
+  if (self)
+  {
+    _charImageDict = [CPDictionary dictionary];
+  }
+
   return self;
 }
 
--(CPImage) getImageForID:(CPString)id
+-(CPImage) getCharImageForID:(CPString)id
 {
   var image = nil;
   
-  if [_charImageDict containsKey:id]
+  if ([_charImageDict containsKey:id])
   {
     image = [_charImageDict objectForKey:id];
   }
   
   else 
   {
-    var url = charImageURL + "id" + "_64";
-    image = [[CPImage alloc] initWithContentsOfFile:url];
+    var url = charImageURL + id + "_64" + ".jpg";
     
+    image = [[CPImage alloc] initWithContentsOfFile:url];
     [_charImageDict setObject:image forKey:id];
   }
   

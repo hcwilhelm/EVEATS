@@ -2,7 +2,10 @@
 @interface AppController : NSObject
 {
     IBOutlet NSWindow* theWindow;
-    IBOutlet NSPanel* loginPanel;
+    IBOutlet NSSplitView* verticalSplitView;
+    IBOutlet NSView* filterView;
+    IBOutlet NSView* infoLabelView;
+    IBOutlet CPButtonBar* leftButtonBar;
 }
 
 @end
