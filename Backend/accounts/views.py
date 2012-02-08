@@ -109,6 +109,17 @@ def register(request):
     reponse.write(message.json())
     return response
 
+# =============
+# = info View =
+# =============
+
+def info(request):
+    serializer = serializers.get_serializer("json")()
+    response = HttpResponse(mimetype='application/json')
+
+    serializer.serialize([request.user], stream=response)
+    return response
+
 # =====================================================
 # = listAccounts should be limeted to superusers only =
 # =====================================================

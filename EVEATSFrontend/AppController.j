@@ -27,12 +27,21 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
 
 @implementation AppController : CPObject
 {
-    @outlet CPWindow      theWindow;
-    @outlet CPSplitView   verticalSplitView;
-    @outlet CPView        filterView;
-    @outlet CPView        infoLabelView;
-    @outlet CPButtonBar   leftButtonBar;
-    
+  // ===========================================
+  // = Indentation reflects the Views hirachie =
+  // ===========================================
+  
+    @outlet CPWindow                      theWindow;
+        @outlet CPSplitView               splitViewMain;
+          @outlet CPView                  navigationArea;
+              @outlet CPView              filterView;
+              @outlet CPSplitView         navigationSplitView;
+                  @outlet CPView          dataView;
+                  @outlet CPView          metaInfoView;
+                      @outlet CPView      metaInfoLabelView;
+              @outlet CPButtonBar         navigationAreaButtonBar;
+          @outlet CPView                  contentView;
+
     CPToolbar             _toolbar;
     CPWindowController    _loginController;
     CPViewController      _userController;
@@ -40,6 +49,7 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
     CPButton              _hideButton;
     CPImage               _hideButtonImageDisable;
     CPImage               _hideButtonImageEnable;
+    BOOL                  _metaInfoViewVisible;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
@@ -53,12 +63,11 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
       object:nil];
       
     userController = [[UserController alloc] initWithCibName:"UserView" bundle:nil];
-    [[userController view] setFrame:[[theWindow contentView] frame]];
     
-    console.log(theWindow);
-    console.log([userController view]);
-    //[theWindow setContentView:[userController view]];
+    [[userController view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
     
+    [contentView addSubview: [userController view]];
+    [[userController view] setFrame:[contentView bounds]];
     
 }
 
@@ -93,27 +102,40 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   [[_loginController window] orderFront:self];
   
   
-  // =====================
-  // = verticalSplitView =
-  // =====================
+  // =================
+  // = splitViewMain =
+  // =================
 
-  [verticalSplitView setIsPaneSplitter:NO];
+  [splitViewMain setIsPaneSplitter:NO];
+  [splitViewMain setPosition:250 ofDividerAtIndex:0];
   
-  // ===============
-  // = Filter View =
-  // ===============
+  [navigationArea setAutoresizingMask:CPViewNotSizable];
+  [contentView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+  
+  // ==============
+  // = filterView =
+  // ==============
   
   [filterView setBackgroundColor:[CPColor colorWithPatternImage:[[CPImage alloc] initWithContentsOfFile:"./Resources/Backgrounds/background-filter.png"]]];
   
-  // =================
-  // = infoLabelView =
-  // =================
+  // =======================
+  // = navigationSplitView =
+  // =======================
   
-  [infoLabelView setBackgroundColor:[CPColor colorWithPatternImage:[[CPImage alloc] initWithContentsOfFile:"./Resources/Backgrounds/background-filter.png"]]];
+  [navigationSplitView setIsPaneSplitter:NO];
   
-  // =================
-  // = leftButtonBar =
-  // =================
+  [dataView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+  [metaInfoView setAutoresizingMask:CPViewNotSizable];
+  
+  // =====================
+  // = metaInfoLabelView =
+  // =====================
+  
+  [metaInfoLabelView setBackgroundColor:[CPColor colorWithPatternImage:[[CPImage alloc] initWithContentsOfFile:"./Resources/Backgrounds/background-filter.png"]]];
+  
+  // ===========================
+  // = navigationAreaButtonBar =
+  // ===========================
   
   var bezelColor              = [CPColor colorWithPatternImage:[[CPImage alloc] initWithContentsOfFile:"./Resources/TNButtonBar/buttonBarBackground.png"]];
   
@@ -127,21 +149,44 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   var rightBezelHighlighted   = [[CPImage alloc] initWithContentsOfFile:"./Resources/TNButtonBar/buttonBarRightBezelHighlighted.png"];
   var buttonBezelHighlighted  = [CPColor colorWithPatternImage:[[CPThreePartImage alloc] initWithImageSlices:[leftBezelHighlighted, centerBezelHighlighted, rightBezelHighlighted] isVertical:NO]];
   
-  [leftButtonBar setValue:bezelColor forThemeAttribute:"bezel-color"];
-  [leftButtonBar setValue:buttonBezel forThemeAttribute:"button-bezel-color"];
-  [leftButtonBar setValue:buttonBezelHighlighted forThemeAttribute:"button-bezel-color" inState:CPThemeStateHighlighted];
+  [navigationAreaButtonBar setValue:bezelColor forThemeAttribute:"bezel-color"];
+  [navigationAreaButtonBar setValue:buttonBezel forThemeAttribute:"button-bezel-color"];
+  [navigationAreaButtonBar setValue:buttonBezelHighlighted forThemeAttribute:"button-bezel-color" inState:CPThemeStateHighlighted];
   
   _hideButtonImageEnable  = [[CPImage alloc] initWithContentsOfFile:"./Resources/IconsButtonBar/show.png"];
   _hideButtonImageDisable = [[CPImage alloc] initWithContentsOfFile:"./Resources/IconsButtonBar/hide.png"];
   
-  _hideButton             = [CPButtonBar minusButton];
-  [_hideButton setImage:_hideButtonImageEnable];
+  _hideButton = [CPButtonBar minusButton];
+  [_hideButton setImage:_hideButtonImageDisable];
+  [_hideButton setToolTip:"Display or hide the info view"];
+  [_hideButton setTarget:self];
+  [_hideButton setAction:@selector(toggleMetaInfoView:)];
+  
+  _metaInfoViewVisible = YES;
   
   var buttons = [CPArray array];
   [buttons addObject:_hideButton];
   
-  [leftButtonBar setButtons:buttons];
+  [navigationAreaButtonBar setButtons:buttons];
   
+}
+
+-(@action) toggleMetaInfoView:(id)sender
+{
+  if (_metaInfoViewVisible)
+  {
+    [metaInfoView removeFromSuperview];
+    [_hideButton setImage:_hideButtonImageEnable];
+    _metaInfoViewVisible = NO;
+  }
+  
+  else 
+  {
+    [navigationSplitView addSubview:metaInfoView];
+    [navigationSplitView setPosition:[metaInfoView frame].origin.y ofDividerAtIndex:0];
+    [_hideButton setImage:_hideButtonImageDisable];
+    _metaInfoViewVisible = YES;
+  }
 }
 
 // ===================================
@@ -175,8 +220,9 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
     CharImagePlaceholderToolbarItem,
     CharSelectorToolbarItem,
     CPToolbarFlexibleSpaceItemIdentifier,
+    AssetsToolbarItem,
     ManageAccountToolbarItem,
-    AssetsToolbarItem
+    CPToolbarFlexibleSpaceItemIdentifier
    ];
 }
 
@@ -198,6 +244,26 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
     [toolbarItem setLabel:"Switch Character"]
     [toolbarItem setMinSize:CGSizeMake(128, 24)];
     [toolbarItem setMaxSize:CGSizeMake(128, 24)];
+  }
+  
+  else if (anItemIdentifier == AssetsToolbarItem)
+  {
+    var icon = [[CPImage alloc] initWithContentsOfFile:"./Resources/IconsToolbar/assets.png"];
+    
+    [toolbarItem setImage:icon];
+    [toolbarItem setLabel:"Assets"];
+    [toolbarItem setMinSize:CGSizeMake(32, 32)];
+    [toolbarItem setMaxSize:CGSizeMake(32, 32)];
+  }
+  
+  else if (anItemIdentifier == ManageAccountToolbarItem)
+  {
+    var icon = [[CPImage alloc] initWithContentsOfFile:"./Resources/IconsToolbar/account.png"];
+    
+    [toolbarItem setImage:icon];
+    [toolbarItem setLabel:"Account"];
+    [toolbarItem setMinSize:CGSizeMake(32, 32)];
+    [toolbarItem setMaxSize:CGSizeMake(32, 32)];
   }
     
     return toolbarItem;

@@ -35,6 +35,7 @@ urlpatterns = patterns('',
     (r'^accounts/listAccounts/$', 'accounts.views.listAccounts'),
     (r'^accounts/login/$', 'accounts.views.login'),
     (r'^accounts/logout/$', 'accounts.views.logout'),
+    (r'^accounts/info/$', 'accounts.views.info'),
 
     # eveapi app
     (r'^eveapi/addApiKey/$', 'eveapi.views.addApiKey'),
