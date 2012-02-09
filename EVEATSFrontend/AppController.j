@@ -62,13 +62,7 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
       name:LoginControllerLoginSuccessful
       object:nil];
       
-    userController = [[UserController alloc] initWithCibName:"UserView" bundle:nil];
-    
-    [[userController view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
-    
-    [contentView addSubview: [userController view]];
-    [[userController view] setFrame:[contentView bounds]];
-    
+
 }
 
 - (void)awakeFromCib
@@ -171,6 +165,10 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   
 }
 
+// ============
+// = Actions  =
+// ============
+
 -(@action) toggleMetaInfoView:(id)sender
 {
   if (_metaInfoViewVisible)
@@ -187,6 +185,15 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
     [_hideButton setImage:_hideButtonImageDisable];
     _metaInfoViewVisible = YES;
   }
+}
+
+-(@action) toolbarItemManageAccoutClicked:(id)sender
+{
+  userController = [[UserController alloc] initWithCibName:"UserView" bundle:nil];
+  [[userController view] setFrame:[contentView bounds]];
+  [[userController view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+  
+  [contentView addSubview: [userController view]];
 }
 
 // ===================================
@@ -262,6 +269,8 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
     
     [toolbarItem setImage:icon];
     [toolbarItem setLabel:"Account"];
+    [toolbarItem setTarget:self];
+    [toolbarItem setAction:@selector(toolbarItemManageAccoutClicked:)];
     [toolbarItem setMinSize:CGSizeMake(32, 32)];
     [toolbarItem setMaxSize:CGSizeMake(32, 32)];
   }

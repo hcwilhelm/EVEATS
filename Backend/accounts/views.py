@@ -24,6 +24,8 @@ class ErrorMessage(object):
         
 def login(request):
     response = HttpResponse(mimetype='application/json')
+    
+    auth.logout(request);
         
     if 'username' not in request.GET or 'password' not in request.GET:
         message = ErrorMessage(False, "Missing GET parameter! Usage: ?username=&password=")
@@ -106,7 +108,7 @@ def register(request):
     user.save()
     
     message = ErrorMessage(True, "User created")
-    reponse.write(message.json())
+    response.write(message.json())
     return response
 
 # =============

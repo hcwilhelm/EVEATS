@@ -13,4 +13,5 @@
     IBOutlet NSView* contentView;
 }
 - (IBAction)toggleMetaInfoView:(id)aSender;
+- (IBAction)toolbarItemManageAccoutClicked:(id)aSender;
 @end

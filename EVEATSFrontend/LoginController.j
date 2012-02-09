@@ -13,6 +13,7 @@
 // ==============
 
 var loginURL     = "/accounts/login/";
+var logoutURL    = "/accounts/logout/";
 var registerURL  = "/accounts/register/";
 
 // =================
@@ -83,13 +84,17 @@ LoginControllerLoginSuccessful = @"LoginControllerLoginSuccessful";
 {
   var result = CPJSObjectCreateWithJSON(data);
   
+  console.log(result);
+  
   if (connection == _loginConnection)
   {
     [messageTextField setStringValue:result.message];
     
     if (result.success)
     {
-      [[CPNotificationCenter defaultCenter] postNotificationName:LoginControllerLoginSuccessful object:self];
+      window.setTimeout(function() { 
+          [[CPNotificationCenter defaultCenter] postNotificationName:LoginControllerLoginSuccessful object:self];
+        }, 500);
     }
   }
   
