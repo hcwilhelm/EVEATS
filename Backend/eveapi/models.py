@@ -8,45 +8,72 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-import xml.etree.ElementTree as ElementTree
-import httplib
-import urllib
+from Backend.eveapi.client import EVEError 
+from Backend.eveapi.client import EVEClient
 
-baseURL = "api.eveonline.com"
-header  = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+import datetime
+
+# ============================================================================================
+# = APIKeyInfo and associated rows. See  http://wiki.eve-id.net/APIv2_Account_APIKeyInfo_XML =
+# ============================================================================================
+
+class APIKeyInfo(models.Model):
+  accessMask      = models.IntegerField()
+  type            = models.CharField(max_length=64)
+  expires         = models.DateTimeField(null=True)
+  chachedUntil    = models.DateTimeField()
+  
+  def expired(self):
+    return self.chachedUntil < datetime.datetime.utcnow()
+
+class APIKeyInfoRow(models.Model):
+  apiKeyInfo        = models.ForeignKey(APIKeyInfo)
+  characterID       = models.IntegerField()
+  characterName     = models.CharField(max_length=128)
+  corporationID     = models.IntegerField()
+  corporationName   = models.CharField(max_length=128)
+
+# ======================================================================================
+# = Class APIKey. Note ! Stricly use costum get methods to acces related model objects =
+# ======================================================================================
 
 class APIKey(models.Model):
   keyID           = models.IntegerField(null=False)
   vCode           = models.CharField(max_length=64, null=False)
   name            = models.CharField(max_length=128)
   user            = models.ForeignKey(User)
-
-class APIKeyInfo(models.Model):
-  apiKey          = models.ForeignKey(APIKey)
-  accessMask      = models.IntegerField()
-  type            = models.CharField(max_length=64)
-  expires         = models.DateField()
-  chachedUntil    = models.DateField()
+  apiKeyInfo      = models.ForeignKey(APIKeyInfo, null=True)
   
-  @staticmethod
-  def update(apiKeyObject):
-    params   = urllib.urlencode({'keyID' : apiKeyObject.keyID, 'vCode' : apiKeyObject.vCode})
-    
-    connection  = httplib.HTTPSConnection(baseURL, 443)
-    connection.request("GET", "/account/APIKeyInfo.xml.aspx", params, header)
-    
-    data = connection.getresponse().read()
-    print data
-    connection.close()
-    
-    xmlTree = ElementTree.fromstring(data)
-    print xmlTree
-    
+  def getAPIKeyInfo(self):
+    if apiKeyInfo == None:
+      client = EVEClient(self)
+      
+      xml   = client.getAPIKeyInfo()
+      key   = xml.find("result/key")
+      until = xml.find("cachedUntil") 
+      
+      apiKeyInfo              = APIKeyInfo();
+      apiKeyInfo.accessMask   = key.attrib['accessMask']
+      apiKeyInfo.type         = key.attrib['type']
+      apiKeyInfo.chachedUntil = datetime.datetime.strptime(until.text, "%Y-%m-%d %H:%M:%S")
+      
+      if key.attrib['expires'] != "":
+        apiKeyInfo.expires    = datetime.datetime.strptime(key.attrib['expires'], "%Y-%m-%d %H:%M:%S")
+      
+      apiKeyInfo.save()
+      
+      for row in key.find("rowset").getchildren():
+        apiKeyInfoRow                 = APIKeyInfoRow()
+        apiKeyInfoRow.apiKeyInfo      = apiKeyInfo
+        apiKeyInfoRow.characterID     = row.attrib['characterID']
+        apiKeyInfoRow.characterName   = row.attrib['characterName']
+        apiKeyInfoRow.corporationID   = row.attrib['corporationID']
+        apiKeyInfoRow.corporationName = row.attrib['corporationName']
+        apiKeyInfoRow.save()
+        
+    else if self.apiKeyInfo.expired():
+      
+      
 
-class APIKeyInfoRowset(models.Model):
-  apiKeyInfo        = models.ForeignKey(APIKeyInfo)
-  characterID       = models.IntegerField()
-  characterName     = models.CharField(max_length=128)
-  corporationID     = models.IntegerField()
-  corporationName   = models.CharField(max_length=128)
+
 
