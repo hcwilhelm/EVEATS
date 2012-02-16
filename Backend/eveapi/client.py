@@ -6,20 +6,12 @@
 #  Copyright 2012 scienceondope.org All rights reserved.
 # 
 
-# ======================================
-# = import corresponding eveapi.models =
-# ======================================
-
-from eveapi.models import APIKeyInfo, ApiKeyInfoRow
-
 # =========================
 # = import python modules =
 # =========================
 
-import xml.etree.ElementTree
 import httplib
 import urllib
-import datetime
 
 # =============================
 # = Static eve api Host/Port  =
@@ -40,7 +32,7 @@ class EVEError(Exception):
 
 # ==============================================
 # = Class EVEClient used to query the EVE API  =
-# = Return Value is an python ElementTree      =
+# = Return value is a plain XML String         =
 # ==============================================
 
 class EVEClient(object):
@@ -56,12 +48,7 @@ class EVEClient(object):
     connection = httplib.HTTPSConnection(EVE_API_HOST, EVE_API_PORT)
     connection.request("GET", action, params, header)
     
-    xml = xml.etree.ElementTree.fromstring(connection.getresponse().read())
+    xml = connection.getresponse().read()
     connection.close()
     
-    if xml.find("error") != None:
-      error = xml.fing("error")
-      raise EVEError(error.attrib['code'], error.text)
-      
-    else:
-      return xml
+    return xml
