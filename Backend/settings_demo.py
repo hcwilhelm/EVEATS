@@ -11,48 +11,29 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE'    :   'django.db.backends.mysql',     # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME'      :   '',                             # Or path to database file if using sqlite3.
-        'USER'      :   '',                             # Not used with sqlite3.
-        'PASSWORD'  :   '',                             # Not used with sqlite3.
-        'HOST'      :   'localhost',                    # Set to empty string for localhost. Not used with sqlite3.
-        'PORT'      :   '3306',                         # Set to empty string for default. Not used with sqlite3.
+        'ENGINE'    : 	'django.db.backends.mysql', 	# Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME'      : 	'',                	# Or path to database file if using sqlite3.
+        'USER'      : 	'',                	# Not used with sqlite3.
+        'PASSWORD'  :   '',	                  	# Not used with sqlite3.
+        'HOST'      : 	'',                 	# Set to empty string for localhost. Not used with sqlite3.
+        'PORT'      : 	'',                      	# Set to empty string for default. Not used with sqlite3.
     },
     
     'evedb': {
-        'ENGINE'    :   'django.db.backends.mysql',     # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME'      :   '',                             # Or path to database file if using sqlite3.
-        'USER'      :   '',                             # Not used with sqlite3.
-        'PASSWORD'  :   '',                             # Not used with sqlite3.
-        'HOST'      :   'localhost',                    # Set to empty string for localhost. Not used with sqlite3.
-        'PORT'      :   '3306',                         # Set to empty string for default. Not used with sqlite3.
+        'ENGINE'    :   'django.db.backends.mysql',
+        'NAME'      :   '',
+        'USER'      :   '',
+        'PASSWORD'  :   '',
+        'HOST'      :   '',
+        'PORT'      :   ''
     }
 }
 
 DATABASE_ROUTERS = ['evedb.router.EveDBRouter']
 
-# E-Mail Settings
-EMAIL_BACKEND           = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST              = ''
-EMAIL_PORT              = 25
-EMAIL_USE_TLS           = False
-EMAIL_HOST_USER         = ''
-EMAIL_HOST_PASSWORD     = ''
-EMAIL_SUBJECT_PREFIX    = '[EVEATS]'
-
 # Eve API setting 
-# This must be a full API key from your CEO or any Director otherwise 
-# you can't import your corporations assets.
-# 
-# Security Warning 
-# You have to make sure that this information is keep private.
-# Don't commit a working full API key to a pulic place
-EVEAPI = {
-    'APIURL': 'api.eveonline.com',
-    'USERID': '', 
-    'APIKEY': '',
-    'CHARID': ''
-}
+EVE_API_HOST = "api.eveonline.com"
+EVE_API_PORT = 443
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -106,7 +87,7 @@ STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-	"/path/to/frontend",
+	"/home/wilhelm/EVEATS/EVEATSFrontend",
 )
 
 # List of finder classes that know how to find static files in
@@ -127,20 +108,39 @@ TEMPLATE_LOADERS = (
 #     'django.template.loaders.eggs.Loader',
 )
 
+# Cache backend memcached
+CACHES = {
+  'default': {
+    'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+    'LOCATION': '127.0.0.1:11211',
+  }
+}
+
+# Celery : Distributed Task Queue
+import djcelery
+djcelery.setup_loader()
+
+BROKER_HOST = "localhost"
+BROKER_PORT = 5672
+BROKER_USER = "EVEATS"
+BROKER_PASSWORD = "eveats"
+BROKER_VHOST = "EVEATS"
+
+CELERYD_CONCURRENCY = 4
+CELERYD_PREFETCH_MULTIPLIER = 4
+
+# Django Middelware Classes
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.cache.UpdateCacheMiddleware',
+    'django.middleware.cache.FetchFromCacheMiddleware',
 )
 
 ROOT_URLCONF = 'Backend.urls'
-
-# For userpasswords
-PASSWORD_HASHERS = (
-    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    )
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -149,11 +149,11 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
-    # own apps
     'assets',
+    'evedb',
     'eveapi',
     'accounts',
-    # django stuff
+    'djcelery',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
