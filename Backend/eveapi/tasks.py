@@ -17,7 +17,7 @@ from lxml import etree
 
 from eveapi.models import APIKey
 from eveapi.models import APIKeyInfo
-from eveapi.models import Charaters
+from eveapi.models import Characters
 
 import httplib
 import urllib
@@ -30,6 +30,7 @@ import time
 class ImportAPIKeyInfoTask(Task):
   
   def run(self, key_id):
+    print "ImportAPIKeyInfoTask"
     
     apiKey = APIKey.objects.get(pk=key_id)
     
@@ -66,7 +67,7 @@ class ImportAPIKeyInfoTask(Task):
       apiKey.characters_set.all().delete()
       
       for xml_row in xml_key.find("rowset"):
-        apiKey.chracters_set.create(characterID=xml_row.get("characterID"), 
+        apiKey.characters_set.create(characterID=xml_row.get("characterID"), 
                                     characterName=xml_row.get("characterName"), 
                                     corporationID=xml_row.get("corporationID"), 
                                     corporationName=xml_row.get("corporationName"), 
@@ -106,7 +107,7 @@ class ImportAPIKeyInfoTask(Task):
       apiKey.characters_set.all().delete()
 
       for xml_row in xml_key.find("rowset"):
-        apiKey.chracters_set.create(characterID=xml_row.get("characterID"), 
+        apiKey.characters_set.create(characterID=xml_row.get("characterID"), 
                                     characterName=xml_row.get("characterName"), 
                                     corporationID=xml_row.get("corporationID"), 
                                     corporationName=xml_row.get("corporationName"), 
@@ -135,6 +136,7 @@ class ImportAPIKeyInfoTask(Task):
 class ImportCharactersTask(Task):
   
   def run(self, apiKey_id):
+    print "ImportCharactersTask"
     
     apiKey      = APIKey.objects.get(pk=apiKey_id)
     needsUpdate = False
@@ -148,22 +150,25 @@ class ImportCharactersTask(Task):
         needsUpdate = True;
         break
     
+    if len(apiKey.characters_set.all()) == 0:
+      needsUpdate = True;
+    
     # ===========================
     # = Use the Character list  =
     # ===========================
     
     if needsUpdate:
-      xml_root  = getElementTree(apiKey)
+      xml_root  = self.getElementTree(apiKey)
       xml_until = xml_root.find("cachedUntil")
       
       apiKey.characters_set.all().delete()
       
       for xml_row in xml_root.find("result/rowset"):
-        apiKey.chracters_set.create(characterID=xml_row.get("characterID"), 
-                                    characterName=xml_row.get("characterName"), 
+        apiKey.characters_set.create(characterID=xml_row.get("characterID"), 
+                                    characterName=xml_row.get("name"), 
                                     corporationID=xml_row.get("corporationID"), 
                                     corporationName=xml_row.get("corporationName"), 
-                                    cachedUntil=cachedUntil)
+                                    cachedUntil=datetime.datetime.strptime(xml_until.text, ("%Y-%m-%d %H:%M:%S")))
                                     
     return True
     

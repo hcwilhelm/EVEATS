@@ -189,11 +189,22 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
 
 -(@action) toolbarItemManageAccoutClicked:(id)sender
 {
-  userController = [[UserController alloc] initWithCibName:"UserView" bundle:nil];
-  [[userController view] setFrame:[contentView bounds]];
-  [[userController view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+  if (_userController != nil)
+  {
+    [[_userController view] removeFromSuperview]
+    _userController = nil;
+  }
   
-  [contentView addSubview: [userController view]];
+  _userController = [[UserController alloc] initWithCibName:"UserView" bundle:nil];
+  [[_userController view] setFrame:[contentView bounds]];
+  [[_userController view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+  
+  [contentView addSubview: [_userController view]];
+}
+
+-(@action) toolbarItemAssetsClicked:(id)sender
+{
+  
 }
 
 // ===================================
@@ -259,6 +270,8 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
     
     [toolbarItem setImage:icon];
     [toolbarItem setLabel:"Assets"];
+    [toolbarItem setTarget:self];
+    [toolbarItem setAction:@selector(toolbarItemAssetsClicked:)];
     [toolbarItem setMinSize:CGSizeMake(32, 32)];
     [toolbarItem setMaxSize:CGSizeMake(32, 32)];
   }

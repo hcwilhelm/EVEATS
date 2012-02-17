@@ -1,99 +1,108 @@
-from Backend.helper import *
-from Backend.eveapi.models import EveApiKey
+# 
+#  views.py
+#  Backend
+#  
+#  Created by Hans Christian Wilhelm on 2012-02-17.
+#  Copyright 2012 scienceondope.org All rights reserved.
+# 
+
+
+from eveapi.models import *
+from eveapi.tasks import *
+
+from django.contrib.auth.models import User
+from django.contrib import auth
 
 from django.core import serializers
-from django.contrib.auth.models import User
+from django.utils import simplejson
+
 from django.http import HttpResponse
+from django.views.decorators.cache import never_cache
 
-# =======================================================
-#
-# Add EVE Online API Key
-#
-# HTTP Parameters:
-#   userID              = ID from user to save key for (optional, needs admin permissions)
-#   keyID               = the key ID
-#   keyVerificationCode = the verification code
-#   comment             = comment to add to key
-#
-# Errorcodes:
-#     0 = Key added
-#   100 = not logged in
-#   200 = API key already in database
-#   300 = User for userID not found
-#   400 = User not allowed to add keys for other users
-#   900 = keyID parameter missing
-#   901 = keyVerificationCode parameter missing
-# =======================================================
-def addApiKey(request):
-    response = HttpResponse(mimetype='application/json')
-    result = None
-    if request.user.is_authenticated():
-        userID = getHttpRequestParameter(request, 'userID')
-        keyID = getHttpRequestParameter(request, 'keyID')
-        keyVerificationCode = getHttpRequestParameter(request, 'keyVerificationCode')
-        keyComment = getHttpRequestParameter(request, 'comment')
-
-        if keyID is None:
-            result = RequestResult(Message="keyID parameter missing", ErrorCode=900)
-        elif keyVerificationCode is None:
-            result = RequestResult(Message="keyVerificationCode parameter missing", ErrorCode=901)
-        elif userID is not None and not (request.user.is_superuser or request.user.is_staff):
-            result = RequestResult(Message="Missing permission to add keys for other users", ErrorCode=400)
-        else:
-            try:
-                EveApiKey.objects.get(ccpID=keyID)
-                result = RequestResult(Message="API Key already in database!", ErrorCode=200)
-            except EveApiKey.DoesNotExist:
-                thisUser = request.user
-                if userID is not None:
-                    try:
-                        thisUser = User.objects.get(pk=userID)
-                    except User.DoesNotExist:
-                        thisUser = None
-                        result = RequestResult(Message="User not found", ErrorCode=300)
-                if thisUser is not None:
-                    EveApiKey.objects.create(ccpID=keyID, verificationCode=keyVerificationCode, comment=keyComment, owner=thisUser)
-                    result = RequestResult(Success=True, Message="API Key added")
+def addAPIKey(request):
+  response = HttpResponse(mimetype="application/json")
+  
+  if request.user.is_authenticated():
+    if 'name' not in request.GET or 'keyID' not in request.GET or 'vCode' not in request.GET:
+      response.write(simplejson.dumps({'success':False, 'message':"Missing GET parameter"}))
     else:
-        result = RequestResult(Message="You must login first", ErrorCode=100)
-    response.content = result
-    return response
+      request.user.apikey_set.create(keyID=request.GET['keyID'], vCode=request.GET['vCode'], name=request.GET['name'])
+      response.write(simplejson.dumps({'success':True, 'message':"APIKey added"}))
+  else:
+    response.write(simplejson.dumps({'success':False, 'message':"You are not loged in"}))
+    
+  return response
 
-# =======================================================
-#
-# List all EVE Online API Keys
-#
-# HTTP Parameters:
-#   userID              = ID from user to save key for (optional, needs admin permissions)
-#
-# Errorcodes:
-#   100 = not logged in
-#   200 = User not allowed to view keys for other users
-#   300 = User for userID not found
-# =======================================================
-def listApiKeys(request):
-    serializer = serializers.get_serializer("json")()
-    response = HttpResponse(mimetype='application/json')
+@never_cache
+def apiKeys(request):
+  response = HttpResponse(mimetype="application/json")
+  serializer = serializers.get_serializer("json")()
+  
+  if request.user.is_authenticated():
+    result = request.user.apikey_set.all()
+    serializer.serialize(result, stream=response)
+    
+  else:
+    response.write(simplejson.dumps({'success':False, 'message':"You are not loged in"}))
+    
+  return response
+  
 
-    if request.user.is_authenticated():
-
-        userID = getHttpRequestParameter(request, 'userID')
-
-        if userID is None:
-            result = EveApiKey.objects.filter(owner=request.user)
-            serializer.serialize(result, stream=response)
-        else:
-            if request.user.is_superuser or request.user.is_staff:
-                try:
-                    thisUser = User.objects.get(pk=userID)
-                    result = EveApiKey.objects.filter(owner=thisUser)
-                    serializer.serialize(result, stream=response)
-                except User.DoesNotExist:
-                    response.content = RequestResult(Message="User not found", ErrorCode=300)
-
-            else:
-                response.content = RequestResult(Message="Missing permission to view keys for other users", ErrorCode=200)
+@never_cache
+def apiKeyInfo(request, apiKeyID):
+  response = HttpResponse(mimetype="application/json")
+  serializer = serializers.get_serializer("json")()
+  
+  if request.user.is_authenticated():
+    apiKey = APIKey.objects.get(pk=apiKeyID)
+    
+    if apiKey.apiKeyInfo == None:
+      result = ImportAPIKeyInfoTask.delay(apiKeyID)
+      response.write(simplejson.dumps({'model':"Task", 'taskID':result.task_id}))
+      
+    elif apiKey.apiKeyInfo.expired():
+      result = ImportAPIKeyInfoTask.delay(apiKeyID)
+      response.write(simplejson.dumps({'model':"Task", 'taskID':result.task_id}))
+      
     else:
-        response.content = RequestResult(Message="You must login first", ErrorCode=100)
-
-    return response
+      serializer.serialize([apiKey.apiKeyInfo], stream=response)
+  
+  else:
+    response.write(simplejson.dumps({'success':False, 'message':"You are not loged in"}))
+  
+  return response
+  
+@never_cache
+def characters(request, apiKeyID):
+  response = HttpResponse(mimetype="application/json")
+  serializer = serializers.get_serializer("json")()
+  
+  if request.user.is_authenticated():
+    apiKey = APIKey.objects.get(pk=apiKeyID)
+    
+    chars = apiKey.characters_set.all()
+    
+    if len(chars) == 0:
+      result = ImportCharactersTask.delay(apiKeyID)
+      response.write(simplejson.dumps({'model':"Task", 'taskID':result.task_id}))
+      
+    else:
+      needsUpdate = False
+      
+      for char in chars:
+        if char.expired():
+          needsUpdate = True
+          break
+          
+      if needsUpdate:
+        result = ImportCharactersTask.delay(apiKeyID)
+        response.write(simplejson.dumps({'model':"Task", 'taskID':result.task_id}))
+        
+      else:
+        result = apiKey.characters_set.all()
+        serializer.serialize(result, stream=response)
+  
+  else:
+     response.write(simplejson.dumps({'success':False, 'message':"You are not loged in"}))
+     
+  return response     
