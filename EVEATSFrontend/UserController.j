@@ -13,10 +13,17 @@
 // = Used URL's =
 // ==============
 
-var userInfoURL   = "/accounts/info/";
-var apiKeysURL    = "/eveapi/apiKeys/";
-var addAPIKeyURL  = "/eveapi/addAPIKey/";
+var userInfoURL     = "/accounts/info/";
+var apiKeysURL      = "/eveapi/apiKeys/";
+var addAPIKeyURL    = "/eveapi/addAPIKey/";
+var removeAPIKeyURL = "/eveapi/removeAPIKey/"; 
 
+
+// =================
+// = Notifications =
+// =================
+
+UserControllerAPIKeyChanged = @"UserControllerAPIKeyChanged";
 
 // ========================
 // = class UserController =
@@ -40,9 +47,12 @@ var addAPIKeyURL  = "/eveapi/addAPIKey/";
   
   CPButton              _plusButton;
   CPButton              _minusButton;
+  
   CPURLConnection       _userInfoConnection;
   CPURLConnection       _apiKeyConnection;
   CPURLConnection       _addAPIKeyConnection;
+  CPURLConnection       _removeAPIKeyConnection;
+  
   CPObject              _apiKeys;
 }
 
@@ -60,14 +70,20 @@ var addAPIKeyURL  = "/eveapi/addAPIKey/";
   
   var vcodeColumn = [[CPTableColumn alloc] initWithIdentifier:"vCode"];
   [[vcodeColumn headerView] setStringValue:"Verification Code"];
-  [vcodeColumn setMinWidth:600];
+  [vcodeColumn setWidth:400];
   
   var nameColumn = [[CPTableColumn alloc] initWithIdentifier:"name"];
-  [[nameColumn headerView] setStringValue:"Name"]
+  [[nameColumn headerView] setStringValue:"Name"];
+  [nameColumn setWidth:100];
+  
+  var validColumn = [[CPTableColumn alloc] initWithIdentifier:"isValid"];
+  [[validColumn headerView] setStringValue:"Valid"];
+  [validColumn setWidth:50];
   
   [apiKeyTableView addTableColumn:idColumn];
   [apiKeyTableView addTableColumn:vcodeColumn];
   [apiKeyTableView addTableColumn:nameColumn];
+  [apiKeyTableView addTableColumn:validColumn];
   
   [apiKeyTableView setDataSource:self];
   
@@ -80,6 +96,9 @@ var addAPIKeyURL  = "/eveapi/addAPIKey/";
   
   [_plusButton setTarget:self];
   [_plusButton setAction:@selector(addKeyPopover:)];
+  
+  [_minusButton setTarget:self];
+  [_minusButton setAction:@selector(removeKey:)];
   
   var buttons = [CPArray array];
   [buttons addObject:_plusButton];
@@ -100,7 +119,24 @@ var addAPIKeyURL  = "/eveapi/addAPIKey/";
 
 -(@action) addKeyPopover:(id)sender
 {
+  [addAPIKeyPopover close];
   [addAPIKeyPopover showRelativeToRect:nil ofView:sender preferredEdge:nil];
+}
+
+-(@action) removeKey:(id)sender
+{
+  console.log([apiKeyTableView selectedRow]);
+  
+  if ([apiKeyTableView selectedRow] > -1)
+  {
+    var bundle = [CPBundle mainBundle];
+    var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
+
+    var GET  = "?keyID="  + _apiKeys[[apiKeyTableView selectedRow]]['pk'];
+    
+    var request = [CPURLRequest requestWithURL:baseURL + removeAPIKeyURL + GET];
+    _removeAPIKeyConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+  }
 }
 
 -(@action) addKey:(id)sender
@@ -137,17 +173,27 @@ var addAPIKeyURL  = "/eveapi/addAPIKey/";
   {
     _apiKeys = result;
     [apiKeyTableView reloadData];
+    
+    [[CPNotificationCenter defaultCenter] postNotificationName:UserControllerAPIKeyChanged object:self];
   }
   
   if (connection == _addAPIKeyConnection)
   {
-    console.log(result);
-    
     if (result["success"] == YES)
     {
       _apiKeys = nil;
       [apiKeyTableView reloadData];
     }
+  }
+  
+  if (connection == _removeAPIKeyConnection)
+  { 
+    if (result["success"] == YES)
+    {
+      _apiKeys = nil;
+      [apiKeyTableView reloadData];
+    }
+    
   }
 }
 
@@ -185,6 +231,11 @@ var addAPIKeyURL  = "/eveapi/addAPIKey/";
     if ([aTableColumn identifier] == "name")
     {
       return _apiKeys[rowIndex].fields['name'];
+    }
+    
+    if ([aTableColumn identifier] == "isValid")
+    {
+      return _apiKeys[rowIndex].fields['valid'];
     }
 }
 

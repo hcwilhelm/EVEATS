@@ -39,9 +39,10 @@ urlpatterns = patterns('',
 
     # eveapi app
     url(r'^eveapi/addAPIKey/$', 'eveapi.views.addAPIKey'),
+    url(r'^eveapi/removeAPIKey/$', 'eveapi.views.removeAPIKey'),
     url(r'^eveapi/apiKeys/$', 'eveapi.views.apiKeys'),
     url(r'^eveapi/apiKeyInfo/(?P<apiKeyID>\d+)/$', 'eveapi.views.apiKeyInfo'),
-    url(r'^eveapi/characters/(?P<apiKeyID>\d+)/$', 'eveapi.views.characters'),
+    url(r'^eveapi/characters/$', 'eveapi.views.characters'),
     
     # djcelery
     url(r'^tasks/', include('djcelery.urls')),

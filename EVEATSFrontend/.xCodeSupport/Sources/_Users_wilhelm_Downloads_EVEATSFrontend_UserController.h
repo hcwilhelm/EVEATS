@@ -15,6 +15,7 @@
     IBOutlet NSButton* cancelButton;
 }
 - (IBAction)addKeyPopover:(id)aSender;
+- (IBAction)removeKey:(id)aSender;
 - (IBAction)addKey:(id)aSender;
 - (IBAction)closeWindow:(id)aSender;
 @end

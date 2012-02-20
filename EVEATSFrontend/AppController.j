@@ -21,6 +21,14 @@ var CharSelectorToolbarItem         = "CharSelectorToolbarItem";
 var ManageAccountToolbarItem        = "ManageAccountToolbarItem";
 var AssetsToolbarItem               = "AssetsToolbarItem";
 
+
+// ==============
+// = Used URL's =
+// ==============
+
+var apiKeysURL      = "/eveapi/apiKeys/";
+var charactersURL   = "/eveapi/characters/";
+
 // =======================
 // = Class AppController =
 // =======================
@@ -43,6 +51,8 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
           @outlet CPView                  contentView;
 
     CPToolbar             _toolbar;
+    CPImageView           _charImageView;
+    
     CPWindowController    _loginController;
     CPViewController      _userController;
     
@@ -50,6 +60,12 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
     CPImage               _hideButtonImageDisable;
     CPImage               _hideButtonImageEnable;
     BOOL                  _metaInfoViewVisible;
+    
+    CPURLConnection       _apiKeyConnection;
+    CPURLConnection       _charactersConnection;
+    
+    CPObject              _characters;
+    int                   _selectedChar;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
@@ -60,6 +76,12 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
       addObserver:self
       selector:@selector(loginSuccessfulNotificationPosted:)
       name:LoginControllerLoginSuccessful
+      object:nil];
+      
+    [[CPNotificationCenter defaultCenter] 
+      addObserver:self
+      selector:@selector(APIKeyChangedNotificationPosted:)
+      name:UserControllerAPIKeyChanged
       object:nil];
       
 
@@ -83,7 +105,14 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   [_toolbar setVisible:YES];
   [theWindow setToolbar:_toolbar];
   
-  [self createCharToolbarView];
+  // ===================================================
+  // = selectedChar default value and charToolbarView  =
+  // ===================================================
+  
+  _selectedChar = 1;
+  _charImageView = [[CPImageView alloc] initWithFrame:CGRectMake(0,0,59, 59)];
+  
+  [self updateCharToolbarView];
   
   // =======================================================
   // = Load the login window and display it at the center  =
@@ -207,14 +236,78 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   
 }
 
+-(@action) charChanged:(id)sender
+{
+  _selectedChar = [sender tag];
+  [self updateCharToolbarView];
+}
+
 // ===================================
 // = Notification Observer callbacks =
 // ===================================
 
 -(void) loginSuccessfulNotificationPosted:(id)sender
 {
+  var bundle = [CPBundle mainBundle];
+  var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
+  
+  var request = [CPURLRequest requestWithURL:baseURL + charactersURL];
+  _charactersConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+  
   [[_loginController window] close];
   [theWindow orderFront:self];
+}
+
+-(void) APIKeyChangedNotificationPosted:(id)sender
+{
+  var bundle = [CPBundle mainBundle];
+  var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
+  
+  var request = [CPURLRequest requestWithURL:baseURL + charactersURL];
+  _charactersConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+}
+
+// =============================
+// = CPURLConnection delegates =
+// =============================
+
+-(void) connection:(CPURLConnection)connection didReceiveData:(CPString)data
+{
+  var result = CPJSObjectCreateWithJSON(data);
+  
+  if (connection == _charactersConnection)
+  {
+    _characters = result;
+    
+    var toolbarItem = nil
+    
+    for (var i = 0; i < [_toolbar items].length; ++i)
+    {
+      if ([[_toolbar items][i] itemIdentifier] == CharSelectorToolbarItem)
+      {
+        toolbarItem = [_toolbar items][i];
+      }
+    }
+    
+    [[toolbarItem view] removeAllItems];
+    
+    if (_characters != nil)
+    {
+      for (var i = 0; i < _characters.length; ++i)
+      {
+        var menuItem = [[CPMenuItem alloc] init];
+        [menuItem setTarget:self];
+        [menuItem setAction:@selector(charChanged:)];
+        [menuItem setTitle:_characters[i].fields['characterName']];
+        [menuItem setTag:_characters[i].pk];
+        
+        [[toolbarItem view] addItem: menuItem];
+      }
+    }
+    
+    _selectedChar = [[[toolbarItem view] selectedItem] tag];
+    [self updateCharToolbarView];
+  }
 }
 
 // =====================
@@ -256,9 +349,9 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
 
   else if (anItemIdentifier == CharSelectorToolbarItem)
   {
-    var selector = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0,128, 24)];
+    var _selector = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0,128, 24)];
     
-    [toolbarItem setView:selector];
+    [toolbarItem setView:_selector];
     [toolbarItem setLabel:"Switch Character"]
     [toolbarItem setMinSize:CGSizeMake(128, 24)];
     [toolbarItem setMaxSize:CGSizeMake(128, 24)];
@@ -291,13 +384,13 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
     return toolbarItem;
 }
 
--(void) createCharToolbarView
+-(void) updateCharToolbarView
 {
-  var charImageView = [[CPImageView alloc] initWithFrame:CGRectMake(0,0,59, 59)];
-  [charImageView setImage:[[ImageCache sharedCache] getCharImageForID:"1"]];
+  [_charImageView removeFromSuperview];
+  [_charImageView setImage:[[ImageCache sharedCache] getCharImageForID:_selectedChar]];
   
   var toolbarView = [_toolbar _toolbarView];
-  [toolbarView addSubview:charImageView];
+  [toolbarView addSubview:_charImageView];
 }
 
 @end

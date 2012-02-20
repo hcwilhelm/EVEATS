@@ -32,6 +32,7 @@ class APIKey(models.Model):
   vCode           = models.CharField(max_length=64, null=False)
   name            = models.CharField(max_length=128)
   user            = models.ForeignKey(User)
+  valid           = models.BooleanField()
   apiKeyInfo      = models.ForeignKey(APIKeyInfo, null=True)
 
 # =============================================================================================
@@ -43,8 +44,5 @@ class Characters(models.Model):
   characterName   = models.CharField(max_length=128, null=False)
   corporationID   = models.IntegerField(null=False)
   corporationName = models.CharField(max_length=128, null=False)
-  cachedUntil     = models.DateTimeField(null=False)
   apiKey          = models.ForeignKey(APIKey, null=False)
-
-  def expired(self):
-    return self.cachedUntil < datetime.datetime.utcnow()
+  
