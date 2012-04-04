@@ -15,8 +15,8 @@ DATABASES = {
         'NAME'      : 	'',                	# Or path to database file if using sqlite3.
         'USER'      : 	'',                	# Not used with sqlite3.
         'PASSWORD'  :   '',	                  	# Not used with sqlite3.
-        'HOST'      : 	'',                 	# Set to empty string for localhost. Not used with sqlite3.
-        'PORT'      : 	'',                      	# Set to empty string for default. Not used with sqlite3.
+        'HOST'      : 	'localhost',                 	# Set to empty string for localhost. Not used with sqlite3.
+        'PORT'      : 	'3306',                      	# Set to empty string for default. Not used with sqlite3.
     },
     
     'evedb': {
@@ -24,14 +24,19 @@ DATABASES = {
         'NAME'      :   '',
         'USER'      :   '',
         'PASSWORD'  :   '',
-        'HOST'      :   '',
-        'PORT'      :   ''
+        'HOST'      :   'localhost',
+        'PORT'      :   '3306'
     }
 }
 
+# Database Routers 
+# used to separate the EVE static dump from user specific data 
+
 DATABASE_ROUTERS = ['evedb.router.EveDBRouter']
 
-# Eve API setting 
+
+# EVE API Connection URL 
+
 EVE_API_HOST = "api.eveonline.com"
 EVE_API_PORT = 443
 
@@ -77,11 +82,6 @@ STATIC_ROOT = ''
 # Example: "http://media.lawrence.com/static/"
 STATIC_URL = '/static/'
 
-# URL prefix for admin static files -- CSS, JavaScript and images.
-# Make sure to use a trailing slash.
-# Examples: "http://foo.com/static/admin/", "/static/admin/".
-ADMIN_MEDIA_PREFIX = '/static/admin/'
-
 # Additional locations of static files
 STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
@@ -103,9 +103,9 @@ SECRET_KEY = '&z&8)!e@twh=hc*76ng$fnikm+z+*94a=-m2l*b^l&&p_#y8d8'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
+#    'django.template.loaders.filesystem.Loader',
+#    'django.template.loaders.app_directories.Loader',
+#    'django.template.loaders.eggs.Loader',
 )
 
 # Cache backend memcached
@@ -120,14 +120,14 @@ CACHES = {
 import djcelery
 djcelery.setup_loader()
 
-BROKER_HOST = "localhost"
-BROKER_PORT = 5672
-BROKER_USER = "EVEATS"
-BROKER_PASSWORD = "eveats"
-BROKER_VHOST = "EVEATS"
+BROKER_HOST                   = "localhost"
+BROKER_PORT                   = 5672
+BROKER_USER                   = ""
+BROKER_PASSWORD               = ""
+BROKER_VHOST                  = ""
 
-CELERYD_CONCURRENCY = 4
-CELERYD_PREFETCH_MULTIPLIER = 4
+CELERYD_CONCURRENCY           = 4
+CELERYD_PREFETCH_MULTIPLIER   = 4
 
 # Django Middelware Classes
 MIDDLEWARE_CLASSES = (
@@ -135,9 +135,9 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.cache.UpdateCacheMiddleware',
-    'django.middleware.cache.FetchFromCacheMiddleware',
+    #'django.contrib.messages.middleware.MessageMiddleware',
+    #'django.middleware.cache.UpdateCacheMiddleware',
+    #'django.middleware.cache.FetchFromCacheMiddleware',
 )
 
 ROOT_URLCONF = 'Backend.urls'
@@ -165,10 +165,6 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
 )
-
-SERIALIZATION_MODULES = {
-    'json': 'wadofstuff.django.serializers.json'
-}
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
