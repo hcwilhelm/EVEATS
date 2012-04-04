@@ -6,100 +6,91 @@
 #  Copyright 2012 scienceondope.org All rights reserved.
 # 
 
-
+# 
 from eveapi.models import *
 from eveapi.tasks import *
-from celery.task.sets import TaskSet
 
 from django.contrib.auth.models import User
 from django.contrib import auth
 
-from django.core import serializers
-from django.utils import simplejson
-
 from django.http import HttpResponse
-from django.views.decorators.cache import never_cache
 
-@never_cache
+import simplejson as json
+
+
+# ==========================
+# = Common Response Class  =
+# ==========================
+
+class JSONResponse:
+  def __init__(self, success=True, message="", taskID=0):
+    self.success = success
+    self.message = message
+    self.taskID  = taskID
+    
+  def json(self):
+    return json.dumps({"success":self.succsess, "message":self.message, "taskID":self.taskID})
+    
+# ======================
+# = APIKey Operations  =
+# ======================
+
 def addAPIKey(request):
   response = HttpResponse(mimetype="application/json")
   
-  if request.user.is_authenticated():
-    if 'name' not in request.GET or 'keyID' not in request.GET or 'vCode' not in request.GET:
-      response.write(simplejson.dumps({'success':False, 'message':"Missing GET parameter"}))
+  if not request.user.is_authenticated():
+    jsonResponse = JSONResponse(success=False, message="You are not logged in")
+    response.write(jsonResponse.json())
     
-    else:
-      request.user.apikey_set.create(keyID=request.GET['keyID'], vCode=request.GET['vCode'], name=request.GET['name'])
-      response.write(simplejson.dumps({'success':True, 'message':"APIKey added"}))
+    return response
   
-  else:
-    response.write(simplejson.dumps({'success':False, 'message':"You are not loged in"}))
+  if request.user.is_authenticated():
+    result = AddAPIKeyTask.delay(request.user.id, request.POST["name"], request.POST["keyID"], request.POST["vCode"])
     
-  return response
+    jsonResponse = JSONResponse(success=True, taskID=result.task_id)
+    response.write(jsonResponse.json())
+    
+    return response
 
-@never_cache  
 def removeAPIKey(request):
   response = HttpResponse(mimetype="application/json")
   
+  if not request.user.is_authenticated():
+    jsonResponse = JSONResponse(success=False, message="You are not logged in")
+    response.write(jsonResponse.json())
+    
+    return response
+  
   if request.user.is_authenticated():
-    if 'keyID' not in request.GET:
-      response.write(simplejson.dumps({'success':False, 'message':"Missing GET parameter"}))
-      return response
-    
-    apiKey = APIKey.objects.get(pk=request.GET['keyID'])
-    
-    if apiKey not in request.user.apikey_set.all():
-      response.write(simplejson.dumps({'success':False, 'message':"This APIKey is not related to your account"}))
-      return response
-      
-    else:
-      apiKey.delete()
-      response.write(simplejson.dumps({'success':True, 'message':"APIKey removed"}))
-      return response
-  
-  else:
-    response.write(simplejson.dumps({'success':False, 'message':"You are not loged in"}))
-    return response 
-  
+    result = RemoveAPIKeyTask.delay(request.user.id, request.POST["keyID"])
 
-@never_cache
-def apiKeys(request):
+    jsonResponse = JSONResponse(success=True, taskID=result.task_id)
+    response.write(jsonResponse.json())
+
+    return response
+
+
+def listAPIKey(request):
   response = HttpResponse(mimetype="application/json")
-  serializer = serializers.get_serializer("json")()
+  
+  if not request.user.is_authenticated():
+    jsonResponse = JSONResponse(success=False, message="You are not logged in")
+    response.write(jsonResponse.json())
+    
+    return response
   
   if request.user.is_authenticated():
-    
-    keys = request.user.apikey_set.all()
-    tasks = []
-    
-    for key in keys:
-      if key.valid == None or not key.valid or key.apiKeyInfo == None:
-        key.characters_set.all().delete()
-        
-        tasks.append(ImportAPIKeyInfoTask.subtask((key.id,)))
-        
-      elif key.apiKeyInfo.expired():
-        key.characters_set.all().delete()
-        key.apiKeyInfo.delete()
-        
-        key.apiKeyInfo = None
-        key.save()
-        
-        tasks.append(ImportAPIKeyInfoTask.subtask((key.id,)))
-    
-    job = TaskSet(tasks=tasks)
-    job.apply_async().join()
-    
-    result = request.user.apikey_set.all()
-    serializer.serialize(result, stream=response)
-    
-  else:
-    response.write(simplejson.dumps({'success':False, 'message':"You are not loged in"}))
-    
-  return response
-  
+    result = ListAPIKeyTask.delay(request.user.id)
 
-@never_cache
+    jsonResponse = JSONResponse(success=True, taskID=result.task_id)
+    response.write(jsonResponse.json())
+
+    return response
+
+# ==================
+# = Get APIKeyInfo =
+# ==================
+
 def apiKeyInfo(request, apiKeyID):
   response = HttpResponse(mimetype="application/json")
   serializer = serializers.get_serializer("json")()
@@ -107,6 +98,14 @@ def apiKeyInfo(request, apiKeyID):
   if request.user.is_authenticated():
     apiKey = APIKey.objects.get(pk=apiKeyID)
     
+    if apiKey.apiKeyInfo == None:
+      taskResult = UpdateAPIKeyInfoTask.delay(apiKey.id)
+      taskResult.get()
+      
+    elif apiKey.apiKeyInfo.expired()
+      taskResult = UpdateAPIKeyInfoTask.delay(apiKey.id)
+      taskResult.get()
+      
     if apiKey.valid:
       serializer.serialize([apiKey.apiKeyInfo], stream=response)
       
@@ -118,23 +117,4 @@ def apiKeyInfo(request, apiKeyID):
   
   return response
   
-@never_cache
-def characters(request):
-  response = HttpResponse(mimetype="application/json")
-  serializer = serializers.get_serializer("json")()
-  
-  if request.user.is_authenticated():
-    
-    result = []
-    keys = request.user.apikey_set.all()
-    
-    for key in keys:
-      if key.valid:
-        result.extend(key.characters_set.all())
-    
-    serializer.serialize(result, stream=response)
-  
-  else:
-     response.write(simplejson.dumps({'success':False, 'message':"You are not loged in"}))
-     
-  return response     
+ 

@@ -6,6 +6,8 @@ from django.core import serializers
 from django.utils import simplejson
 from django.core.validators import email_re
 
+from django.views.decorators.cache import never_cache
+
 # =======================
 # = ErrorMessage Object =
 # =======================
@@ -21,7 +23,8 @@ class ErrorMessage(object):
 # ==============
 # = login view =
 # ==============
-        
+
+@never_cache        
 def login(request):
     response = HttpResponse(mimetype='application/json')
     
@@ -55,6 +58,7 @@ def login(request):
 # = logout view =
 # ===============
 
+@never_cache
 def logout(request):
     response = HttpResponse(mimetype='application/json')
     
@@ -73,6 +77,7 @@ def logout(request):
 # = register view =
 # =================
 
+@never_cache
 def register(request):
     response = HttpResponse(mimetype='application/json')
 
@@ -115,6 +120,7 @@ def register(request):
 # = info View =
 # =============
 
+@never_cache
 def info(request):
     serializer = serializers.get_serializer("json")()
     response = HttpResponse(mimetype='application/json')
@@ -126,6 +132,7 @@ def info(request):
 # = listAccounts should be limeted to superusers only =
 # =====================================================
 
+@never_cache
 def listAccounts(request):
     serializer = serializers.get_serializer("json")()
     response = HttpResponse(mimetype='application/json')

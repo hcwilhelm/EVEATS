@@ -8,23 +8,58 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from evedb.models import *
+
 import datetime
 
-# ============================================================================================
-# = APIKeyInfo see  http://wiki.eve-id.net/APIv2_Account_APIKeyInfo_XML                      =
-# ============================================================================================
+
+# =============================================================================================
+# = /account/APIKeyInfo.xml.aspx                                                              =
+# =============================================================================================
 
 class APIKeyInfo(models.Model):
-  accessMask      = models.IntegerField(null=False)
-  accountType     = models.CharField(max_length=64, null=False)
-  expires         = models.DateTimeField(null=True)
-  cachedUntil     = models.DateTimeField(null=False)
+  currentTime       = models.DateTimeField()
+  accessMask        = models.IntegerField()
+  accountType       = models.CharField(max_length=255)
+  expires           = models.DateTimeField(null=True)
+  cachedUntil       = models.DateTimeField()
   
   def expired(self):
     return self.cachedUntil < datetime.datetime.utcnow()
+  
+class Characters(models.Model):
+  characterID       = models.IntegerField()
+  characterName     = models.CharField(max_length=255)
+  corporationID     = models.IntegerField()
+  corporationName   = models.CharField(max_length=255)
+  apiKeyInfo        = models.ForeignKey('APIKeyInfo')
+
+# =============================================================================================
+# = /char/AssetList.xml.aspx                                                                  =
+# =============================================================================================
+
+class AssetList(models.Model):
+  character         = models.ForeignKey('Characters')
+  currentTime       = models.DateTimeField()
+  cachedUntil       = models.DateTimeField()
+  
+  def expired(self):
+     return self.cachedUntil < datetime.datetime.utcnow()
+  
+class Assets(models.Model):
+  assetList         = models.ForeignKey(AssetList)
+  parent            = models.ForeignKey('self', null=True, blank=True)
+  itemID            = models.BigIntegerField()
+  locationID        = models.ForeignKey('evedb.mapDenormalize', null=True, blank=True)
+  typeID            = models.ForeignKey('evedb.invTypes')
+  quantity          = models.IntegerField()
+  flag              = models.ForeignKey('evedb.invFlags')
+  singleton         = models.BooleanField()
+  rawQuantity       = models.IntegerField(null=True, blank=True)
+  
 
 # ============================================================================================
-# = Class APIKey. Note ! Before accesing related models you should call the importTasks      =
+# = Class APIKey. Note ! Before accesing related models you should call the updateTasks      =
 # ============================================================================================
 
 class APIKey(models.Model):
@@ -32,17 +67,5 @@ class APIKey(models.Model):
   vCode           = models.CharField(max_length=64, null=False)
   name            = models.CharField(max_length=128)
   user            = models.ForeignKey(User)
-  valid           = models.BooleanField()
-  apiKeyInfo      = models.ForeignKey(APIKeyInfo, null=True)
-
-# =============================================================================================
-# = Class Characters                                                                          =
-# =============================================================================================
-
-class Characters(models.Model):
-  characterID     = models.IntegerField(primary_key=True)
-  characterName   = models.CharField(max_length=128, null=False)
-  corporationID   = models.IntegerField(null=False)
-  corporationName = models.CharField(max_length=128, null=False)
-  apiKey          = models.ForeignKey(APIKey, null=False)
+  apiKeyInfo      = models.ForeignKey(APIKeyInfo, null=True, on_delete=models.SET_NULL)
   

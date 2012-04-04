@@ -39,8 +39,6 @@ class invTypes(models.Model):
     def __unicode__(self):
         return unicode(self.typeID)
 
-
-
 # =============
 # = invGroups =
 # =============
@@ -123,3 +121,49 @@ class invCategories(models.Model):
 
     def __unicode__(self):
         return unicode(self.categoryID)
+        
+
+# ==================
+# = mapDenormalize =
+# ==================
+
+class mapDenormalize(models.Model):
+    itemID              = models.IntegerField(primary_key=True)
+    typeID              = models.ForeignKey('invTypes', db_column='typeID')
+    groupID             = models.SmallIntegerField()
+    solarSystemID       = models.IntegerField()
+    constellationID     = models.IntegerField()
+    regionID            = models.IntegerField()
+    orbitID             = models.IntegerField()
+    x                   = models.FloatField()
+    y                   = models.FloatField()
+    z                   = models.FloatField()
+    radius              = models.FloatField()
+    itemName            = models.CharField(max_length=100)
+    security            = models.FloatField()
+    celestialIndex      = models.SmallIntegerField()
+    orbitIndex          = models.SmallIntegerField()
+
+    class Meta:
+        db_table        = "mapDenormalize"
+        managed         = False
+
+    def __unicode__(self):
+        return unicode(self.itemID)
+
+# ============
+# = invFlags =
+# ============
+
+class invFlags(models.Model):
+    flagID          = models.IntegerField(primary_key=True)
+    flagName        = models.CharField(max_length=200)
+    flagText        = models.CharField(max_length=200)
+    orderID         = models.IntegerField()
+
+    class Meta:
+        db_table    = "invFlags"
+        managed     = False
+
+    def __unicode__(self):
+        return unicode(self.flagID)
