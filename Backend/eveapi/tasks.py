@@ -29,22 +29,17 @@ import logging
 # ===================================
 # = Update Character from EVE API   =
 # ===================================
-from Backend.eveapi.models import Characters
-
 class UpdateAllCharacters(Task):
-
   def run(self):
-    chars = Characters.objects.filter(deleted=False)
+    allActiveChars = Characters.objects.filter(deleted=False)
 
-    if chars:
-      for char in chars:
-        Task.subtask(task="tasks.UpdateCharacter", kwargs={char=char})
+    for currentChar in allActiveChars:
+      Task.subtask(task="tasks.UpdateCharacter", char=currentChar)
 
-class UpdateCharacter:
-  def run(self, char):
-
+class UpdateCharacter(Task):
+  def run(self, character):
     action = "/eve/CharacterInfo.xml.aspx"
-    params = urllib.urlencode({'characterID':char.characterID})
+    params = urllib.urlencode({'characterID':character.characterID})
     header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
 
     connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
@@ -53,11 +48,10 @@ class UpdateCharacter:
     xml = connection.getresponse().read()
     connection.close()
 
-    if xml_root.find("error") != None:
+    if xml.find("error") != None:
       return False
     else:
-      xml_current = xml_root.find("currentTime")
-      char.securityStatus     = xml_root.find("result/securityStatus")
+      character.securityStatus     = xml_root.find("result/securityStatus")
 
 # ======================================================================================================
 # = AddAPIKeyTask(request.user.id, request.POST["name"], request.POST["keyID"], request.POST["vCode"]) =
