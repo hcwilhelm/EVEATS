@@ -13,3 +13,8 @@ settings.py
 # IDE Stuff #
 #############
 .idear/**/*
+
+# celerybeat #
+##############
+celerybeat-schedule
+celerybeat.pid

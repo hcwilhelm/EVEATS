@@ -18,7 +18,7 @@ DATABASES = {
         'HOST'      : 	'localhost',                 	# Set to empty string for localhost. Not used with sqlite3.
         'PORT'      : 	'3306',                      	# Set to empty string for default. Not used with sqlite3.
     },
-    
+
     'evedb': {
         'ENGINE'    :   'django.db.backends.mysql',
         'NAME'      :   '',
@@ -29,13 +29,13 @@ DATABASES = {
     }
 }
 
-# Database Routers 
-# used to separate the EVE static dump from user specific data 
+# Database Routers
+# used to separate the EVE static dump from user specific data
 
 DATABASE_ROUTERS = ['evedb.router.EveDBRouter']
 
 
-# EVE API Connection URL 
+# EVE API Connection URL
 
 EVE_API_HOST = "api.eveonline.com"
 EVE_API_PORT = 443
@@ -118,6 +118,7 @@ CACHES = {
 
 # Celery : Distributed Task Queue
 import djcelery
+from datetime import timedelta
 djcelery.setup_loader()
 
 BROKER_HOST                   = "localhost"
@@ -128,6 +129,14 @@ BROKER_VHOST                  = ""
 
 CELERYD_CONCURRENCY           = 4
 CELERYD_PREFETCH_MULTIPLIER   = 4
+
+CELERYBEAT_SCHEDULE = {
+  "runs-every-30-seconds": {
+    "task": "eveapi.tasks.UpdateAllCharacters",
+    # Later:   "schedule": crontab(hour=4, minute=30),
+    "schedule": timedelta(seconds=30),
+    },
+}
 
 # Django Middelware Classes
 MIDDLEWARE_CLASSES = (
