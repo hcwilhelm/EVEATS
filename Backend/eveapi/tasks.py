@@ -5,53 +5,152 @@
 #  Created by Hans Christian Wilhelm on 2012-02-15.
 #  Copyright 2012 scienceondope.org All rights reserved.
 #
-
-
-# ===========================================================================
-# = Celery Tasks : All model updates should be performed as a seperate task =
-# ===========================================================================
-from celery.task.sets import subtask
-
 from django.conf import settings
 from django.contrib.auth.models import User
-
 from celery.task import Task
 from lxml import etree
-
 from eveapi.models import *
-
 import httplib
 import urllib
 import datetime
-import time
 import logging
+logger = logging.getLogger(__name__)
+
+LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
+# ===========================================================================
+# = Celery Tasks : All model updates should be performed as a seperate task =
+# ===========================================================================
 
 # ===================================
 # = Update Character from EVE API   =
 # ===================================
 class UpdateAllCharacters(Task):
   def run(self):
-    allActiveChars = Characters.objects.filter(deleted=False)
+
+    allActiveChars = Character.objects.filter(isDeleted=False)
+    logger.info("Got %s characters from database" % allActiveChars.count())
 
     for currentChar in allActiveChars:
-      Task.subtask(task="tasks.UpdateCharacter", char=currentChar)
+      if currentChar.expired():
+        logger.info("Updating character '%s'" % currentChar.characterName)
+        # TODO: this must be a subtask
+        UpdateCharacter.delay(currentChar)
+      else:
+        logger.info("Not updating character '%s'" % currentChar.characterName)
+
+    return True
 
 class UpdateCharacter(Task):
-  def run(self, character):
-    action = "/eve/CharacterInfo.xml.aspx"
-    params = urllib.urlencode({'characterID':character.characterID})
-    header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+  def run(self, character, force=False):
+    returnval = False
+    if force or (character.expired and not character.isDeleted):
+      lock_id = "%s-lock-%s" % (self.name, character.characterID)
+      # cache.add fails if if the key already exists
+      acquire_lock = lambda: cache.add(lock_id, "true", LOCK_EXPIRE)
+      # memcached delete is very slow, but we have to use it to take
+      # advantage of using add() for atomic locking
+      release_lock = lambda: cache.delete(lock_id)
 
-    connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
-    connection.request("GET", action, params, header)
+      if acquire_lock():
+        try:
+          keys = CharacterAPIKeys.objects.filter(character=character)
+          logger.info("Found %s API Keys for Character '%s'" % (keys.count(), character.characterName))
 
-    xml = connection.getresponse().read()
-    connection.close()
+          action = "/eve/CharacterInfo.xml.aspx"
+          params = urllib.urlencode({'characterID':character.characterID})
+          xml = getXMLFromAPI(action=action, params=params)
 
-    if xml.find("error") != None:
-      return False
-    else:
-      character.securityStatus     = xml_root.find("result/securityStatus")
+          error = xml.find("error")
+          if error is not None:
+            errorcode = error.get('code')
+            errormessage = error.text
+
+            if errorcode == "105":
+              logger.warning("Marking character '%s' with id '%s' as deleted, got errorcode 105 from EVE API" % \
+                             (character.characterName, character.characterID))
+              character.isDeleted = True
+              character.save()
+            elif errorcode == "522":
+              logging.warning("Got errorcode 522 for characterID '%s' (Name: '%s') - setting cachedUntil +1day" % \
+                              (character.characterID, character.characterName))
+              character.cachedUntil = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+              character.save()
+            else:
+              # unknown error
+              logging.error("Got this error from EVE API: '%s' - Code '%s' - characterID '%s' - characterName '%s'" % \
+                            (errormessage, errorcode, character.characterID, character.characterName))
+          else:
+            character.characterName = xml.find("result/characterName").text
+            if character.characterName == "":
+              character.characterName = "-- FAILED TO FETCH FROM API --"
+            character.securityStatus = xml.find("result/securityStatus").text
+            character.bloodline = xml.find("result/bloodline").text
+            character.race = xml.find("result/race").text
+            character.cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
+            character.save()
+
+            # TODO: this loop is ugly, if we're very bord, we will improve it! maybe...
+            for employment in xml.findall("result/rowset[@name='employmentHistory']/row"):
+              # first we need the corp
+              corporationID = employment.get('corporationID')
+
+              # TODO: correct way to extract the tuple?
+              corp, created = Corporation.objects.get_or_create(corporationID=corporationID)
+              if created:
+                corp.save()
+
+              # maybe we should update our corp, or if we created
+              # it above, we have to do this to get missing data
+              if corp.expired():
+                # TODO: this must be a subtask, too
+                UpdateCorporation.delay(corp)
+
+              startDate = datetime.datetime.strptime(employment.get('startDate'), "%Y-%m-%d %H:%M:%S")
+
+              newEmployment, created =  CharacterEmploymentHistory.objects.get_or_create(character=character,
+                corporation=corp, startDate=startDate)
+              if created:
+                newEmployment.save()
+            returnval = True
+        finally:
+          release_lock()
+      else:
+        logging.warning("Unable to acquire lock updating characterID '%s'" % character.characterID)
+    return returnval
+
+
+
+class UpdateCorporation(Task):
+  def run(self, corporation, force=False):
+    if force or corporation.expired():
+      action = "/corp/CorporationSheet.xml.aspx"
+      params = urllib.urlencode({'corporationID':corporation.corporationID})
+      xml = getXMLFromAPI(action=action, params=params)
+
+      if xml.find("error") is not None:
+        return False
+      else:
+        corporation.corporationName = xml.find("result/corporationName").text
+        corporation.description = xml.find("result/description").text
+
+        ceo, created = Character.objects.get_or_create(characterID = xml.find("result/ceoID").text)
+        if created:
+          # we will store the ceo name here for noob corps, those chars are not
+          # fetchable via api so we can't get the name during the update later
+          # and storing chars without names would be very ugly!
+          ceo.characterName = xml.find("result/ceoName").text
+          ceo.save()
+          logger.info("Created character with id %s" % ceo.characterID)
+
+        if ceo.expired():
+          # TODO: this must be a subtask, too
+          UpdateCharacter.delay(ceo)
+
+        corporation.ceo = ceo
+        corporation.cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
+        corporation.save()
+
+        return True
 
 # ======================================================================================================
 # = AddAPIKeyTask(request.user.id, request.POST["name"], request.POST["keyID"], request.POST["vCode"]) =
@@ -344,4 +443,16 @@ class UpdateAssetListTask(Task):
     xml = connection.getresponse().read()
     connection.close()
 
+    return etree.fromstring(xml)
+
+
+
+def getXMLFromAPI(action, params):
+    header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+
+    connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
+    connection.request("GET", action, params, header)
+
+    xml = connection.getresponse().read()
+    connection.close()
     return etree.fromstring(xml)
