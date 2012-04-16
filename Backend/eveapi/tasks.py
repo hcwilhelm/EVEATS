@@ -21,6 +21,24 @@ LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
 # = Celery Tasks : All model updates should be performed as a seperate task =
 # ===========================================================================
 
+
+# ===========================================================================
+# = Utility funktions                                                       =
+# ===========================================================================
+
+def getXML(action, params):
+
+  header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+
+  connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
+  connection.request("GET", action, params, header)
+
+  xml = connection.getresponse().read()
+  connection.close()
+
+  return xml
+
+
 # ===================================
 # = Update Character from EVE API   =
 # ===================================
@@ -152,68 +170,27 @@ class UpdateCorporation(Task):
 
         return True
 
-# ======================================================================================================
-# = AddAPIKeyTask(request.user.id, request.POST["name"], request.POST["keyID"], request.POST["vCode"]) =
-# ======================================================================================================
 
-class AddAPIKeyTask(Task):
 
-  def run(self, userID, name, keyID, vCode):
+# =======================
+# = ImportErrorListTask =
+# =======================
 
-    user = User.objects.get(pk=userID)
-    user.apikey_set.create(keyID=keyID, vCode=vCode, name=name)
-
+class ImportErrorListTask(Task):
+  
+  def run(self):
+    action = "/eve/ErrorList.xml.aspx"
+    params = ""
+    
+    xml = getXML(action=action, params=params)
+    xml_tree = etree.fromstring(xml)
+    
+    for row in xml_tree.iter("row"):
+      error = ErrorList(errorCode=row.get("errorCode"), errorText=row.get("errorText"))
+      error.save()
+      
     return True
-
-# =============================================================
-# = RemoveAPIKeyTask.(request.user.id, request.POST["keyID"]) =
-# =============================================================
-
-class RemoveAPIKeyTask(Task):
-
-  def run(self, userID, keyID):
-
-    user = User.objects.get(pk=userID)
-    user.apikey_set.get(pk=keyID).delete()
-
-    return True
-
-# ===================================
-# = ListAPIKeyTask(request.user.id) =
-# ===================================
-
-class ListAPIKeyTask(Task):
-
-  def run(self, userID):
-
-    user = Users.objects.get(pk=userID)
-    keys = user.apikey_set.all()
-
-    total   = keys.count()
-    current = 0
-
-#    for key in keys:
-
-
-  def getXML(self, key):
-
-    action = "/account/APIKeyInfo.xml.aspx"
-    params = urllib.urlencode({'keyID':key.keyID, 'vCode':key.vCode})
-    header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-
-    connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
-    connection.request("GET", action, params, header)
-
-    xml = connection.getresponse().read()
-    connection.close()
-
-    return etree.fromstring(xml)
-
-  def updateAPIKeyInfo(self, key):
-
-    xml_root = getXML(key)
-
-#    if xml_
+    
 # ============================================================================
 # = Class ImportAPIKeyInfoTask                                               =
 # ============================================================================
