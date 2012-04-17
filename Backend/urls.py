@@ -37,13 +37,13 @@ urlpatterns = patterns('',
     url(r'^accounts/logout/$', 'accounts.views.logout'),
     url(r'^accounts/info/$', 'accounts.views.info'),
 
-    # eveapi app
-    url(r'^eveapi/addAPIKey/$', 'eveapi.views.addAPIKey'),
-    url(r'^eveapi/removeAPIKey/$', 'eveapi.views.removeAPIKey'),
-    url(r'^eveapi/apiKeys/$', 'eveapi.views.apiKeys'),
-    url(r'^eveapi/apiKeyInfo/(?P<apiKeyID>\d+)/$', 'eveapi.views.apiKeyInfo'),
-    url(r'^eveapi/characters/$', 'eveapi.views.characters'),
-    
+    # eve app
+    url(r'^eve/addAPIKey/$', 'eve.views.addAPIKey'),
+    url(r'^eve/removeAPIKey/$', 'eve.views.removeAPIKey'),
+    url(r'^eve/apiKeys/$', 'eve.views.apiKeys'),
+    url(r'^eve/apiKeyInfo/(?P<apiKeyID>\d+)/$', 'eve.views.apiKeyInfo'),
+    url(r'^eve/characters/$', 'eve.views.characters'),
+
     # djcelery
     url(r'^tasks/', include('djcelery.urls')),
 )

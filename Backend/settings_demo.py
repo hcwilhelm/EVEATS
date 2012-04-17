@@ -11,12 +11,12 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE'    : 	'django.db.backends.mysql', 	# Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME'      : 	'',                	# Or path to database file if using sqlite3.
-        'USER'      : 	'',                	# Not used with sqlite3.
-        'PASSWORD'  :   '',	                  	# Not used with sqlite3.
-        'HOST'      : 	'localhost',                 	# Set to empty string for localhost. Not used with sqlite3.
-        'PORT'      : 	'3306',                      	# Set to empty string for default. Not used with sqlite3.
+        'ENGINE'    :   'django.db.backends.mysql',
+        'NAME'      :   '',
+        'USER'      :   '',
+        'PASSWORD'  :   '',
+        'HOST'      :   'localhost',
+        'PORT'      :   '3306',
     },
 
     'evedb': {
@@ -30,13 +30,11 @@ DATABASES = {
 }
 
 # Database Routers
-# used to separate the EVE static dump from user specific data
-
+# used to separate the EVE static dump from our own data
 DATABASE_ROUTERS = ['evedb.router.EveDBRouter']
 
 
 # EVE API Connection URL
-
 EVE_API_HOST = "api.eveonline.com"
 EVE_API_PORT = 443
 
@@ -47,7 +45,7 @@ EVE_API_PORT = 443
 # timezone as the operating system.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'America/Chicago'
+TIME_ZONE = 'Europe/Berlin'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -87,7 +85,7 @@ STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-	"/home/wilhelm/EVEATS/EVEATSFrontend",
+    "/home/develop/EVEATS/EVEATSFrontend",
 )
 
 # List of finder classes that know how to find static files in
@@ -95,7 +93,7 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+#   'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -105,7 +103,7 @@ SECRET_KEY = '&z&8)!e@twh=hc*76ng$fnikm+z+*94a=-m2l*b^l&&p_#y8d8'
 TEMPLATE_LOADERS = (
 #    'django.template.loaders.filesystem.Loader',
 #    'django.template.loaders.app_directories.Loader',
-#    'django.template.loaders.eggs.Loader',
+    'django.template.loaders.eggs.Loader',
 )
 
 # Cache backend memcached
@@ -118,24 +116,31 @@ CACHES = {
 
 # Celery : Distributed Task Queue
 import djcelery
+from celery.schedules import crontab
 from datetime import timedelta
+
 djcelery.setup_loader()
 
-BROKER_HOST                   = "localhost"
-BROKER_PORT                   = 5672
-BROKER_USER                   = ""
-BROKER_PASSWORD               = ""
-BROKER_VHOST                  = ""
+BROKER_HOST = "localhost"
+BROKER_PORT = 5672
+BROKER_USER = "eveats"
+BROKER_PASSWORD = "eveats"
+BROKER_VHOST = "eveats"
 
-CELERYD_CONCURRENCY           = 4
-CELERYD_PREFETCH_MULTIPLIER   = 4
+CELERYD_CONCURRENCY = 4
+CELERYD_PREFETCH_MULTIPLIER = 4
+CELERYD_LOG_LEVEL = "INFO"
+CELERYBEAT_LOG_LEVEL = "INFO"
 
 CELERYBEAT_SCHEDULE = {
-  "runs-every-30-seconds": {
-    "task": "eveapi.tasks.UpdateAllCharacters",
-    # Later:   "schedule": crontab(hour=4, minute=30),
-    "schedule": timedelta(seconds=30),
-    },
+  "eve.tasks.UpdateAllCharacters": {
+    "task": "eve.tasks.UpdateAllCharacters",
+    "schedule": crontab(hour=4, minute=30),
+  },
+#  "testing": {
+#    "task": "eve.tasks.UpdateAllCharacters",
+#    "schedule": timedelta(seconds=15),
+#  },
 }
 
 # Django Middelware Classes
@@ -160,7 +165,7 @@ TEMPLATE_DIRS = (
 INSTALLED_APPS = (
     'assets',
     'evedb',
-    'eveapi',
+    'eve',
     'accounts',
     'djcelery',
     'django.contrib.auth',
@@ -173,6 +178,8 @@ INSTALLED_APPS = (
     # 'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
+    'django_evolution',
+    'django_extensions',
 )
 
 # A sample logging configuration. The only tangible logging
