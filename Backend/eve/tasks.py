@@ -7,12 +7,14 @@
 #
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from celery.task import Task
 from lxml import etree
 from eve.models import *
 import httplib
 import urllib
 import datetime
+from decimal import *
 import logging
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,29 @@ LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
 # = Celery Tasks : All model updates should be performed as a seperate task =
 # ===========================================================================
 
+class LockableTask(Task):
+  
+  def __init__(self):
+    Task.__init__(self)
+    self.acquireLock()
+    
+  def __del__(self):
+    self.releaseLock()
+  
+  #
+  # Overwrite getLockID in inherited classes
+  #  
+  
+  def getLockID(self):
+    return 0
+  
+  def acquireLock(self):
+    cache.add(self.getLockID(), "true", LOCK_EXPIRE)
+    
+  def releaseLock(self):
+    cache.delete(self.getLockID())
+    
+    
 # ===================================
 # = Update Character from EVE API   =
 # ===================================
@@ -153,68 +178,45 @@ class UpdateCorporation(Task):
 
         return True
 
-# ======================================================================================================
-# = AddAPIKeyTask(request.user.id, request.POST["name"], request.POST["keyID"], request.POST["vCode"]) =
-# ======================================================================================================
 
-class AddAPIKeyTask(Task):
+# ============================================================================
+# = Class UpdateCharacter                                                    =
+# ============================================================================
 
-  def run(self, userID, name, keyID, vCode):
-
-    user = User.objects.get(pk=userID)
-    user.apikey_set.create(keyID=keyID, vCode=vCode, name=name)
-
+class UpdateCharacterTask(Task):
+  
+  def run(self, char_id):
+    print "UpdateCharacterTask : " + str(char_id)
+    
+    char    = Character.objects.get(pk=char_id) if Characters.objects.get(pk=char_id).exists() else Character(characterID=char_id)
+    
+    action  = "/eve/CharacterInfo.xml.aspx"
+    params  = urllib.urlencode({'characterID':char_id})
+    xml     = getXMLFromAPI(action, params)
+    
+    xml_current = xml.find("currentTime")
+    xml_result  = xml.find("result")
+    xml_rowset  = xml.find("result/rowset")
+    xml_until   = xml.find("cachedUntil")
+    
+    char.currentTime    = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
+    char.characterName  = xml_result.find("characterName").text
+    char.race           = xml_result.find("race").text
+    char.bloodline      = xml_result.find("bloodline").text
+    char.securityStatus = Decimal(xml_rsult.find("securityStatus").text)
+    
+    
+    for xml_row in xml_rowset.iter("row"):
+      obj = CharacterEmploymentHistory()
+      
+      obj.character_id    = char_id
+      obj.corporation_id  = xml_row.get("corporationID")
+      obj.startDate       = datetime.datetime.strptime(xml_row.get("startDate"), "%Y-%m-%d %H:%M:%S")
+      
+      obj.save()
+    
     return True
-
-# =============================================================
-# = RemoveAPIKeyTask.(request.user.id, request.POST["keyID"]) =
-# =============================================================
-
-class RemoveAPIKeyTask(Task):
-
-  def run(self, userID, keyID):
-
-    user = User.objects.get(pk=userID)
-    user.apikey_set.get(pk=keyID).delete()
-
-    return True
-
-# ===================================
-# = ListAPIKeyTask(request.user.id) =
-# ===================================
-
-class ListAPIKeyTask(Task):
-
-  def run(self, userID):
-
-    user = Users.objects.get(pk=userID)
-    keys = user.apikey_set.all()
-
-    total   = keys.count()
-    current = 0
-
-#    for key in keys:
-
-
-  def getXML(self, key):
-
-    action = "/account/APIKeyInfo.xml.aspx"
-    params = urllib.urlencode({'keyID':key.keyID, 'vCode':key.vCode})
-    header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-
-    connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
-    connection.request("GET", action, params, header)
-
-    xml = connection.getresponse().read()
-    connection.close()
-
-    return etree.fromstring(xml)
-
-  def updateAPIKeyInfo(self, key):
-
-    xml_root = getXML(key)
-
-#    if xml_
+ 
 # ============================================================================
 # = Class ImportAPIKeyInfoTask                                               =
 # ============================================================================
@@ -224,104 +226,53 @@ class UpdateAPIKeyInfoTask(Task):
   def run(self, key_id):
     print "ImportAPIKeyInfoTask : " + str(key_id)
 
-    apiKey = APIKey.objects.get(pk=key_id)
-
-    # ===========================
-    # = Get the XML elementTree =
-    # ===========================
-
-    xml_root  = self.getElementTree(apiKey)
-
-    # =================================
-    # = Check if the apiKey is Valid  =
-    # =================================
-
-    if xml_root.find("error") != None:
-      return False
-
-    # ========================
-    # = Ok the Key is Valid  =
-    # ========================
-
+    apiKey  = APIKey.objects.get(pk=key_id)
+    
+    action  = "/account/APIKeyInfo.xml.aspx"
+    params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode})
+    xml     = getXMLFromAPI(action, params)
+    
+    if xml.find("error") != None:
+      apiKey.valid = False
+      
     else:
-
-      xml_current = xml_root.find("currentTime")
-      xml_key     = xml_root.find("result/key")
-      xml_until   = xml_root.find("cachedUntil")
-
-    # ===================================
-    # = create or update new ApiKeyInfo =
-    # ===================================
-
+      xml_current = xml.find("currentTime")
+      xml_key     = xml.find("result/key")
+      xml_rowset  = xml.find("result/key/rowset")
+      xml_until   = xml.find("cachedUntil")
+      
       currentTime = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
-      accessMask  = xml_key.get("accessMask")
-      accountType = xml_key.get("type")
-      expires     = None
       cachedUntil = datetime.datetime.strptime(xml_until.text, "%Y-%m-%d %H:%M:%S")
-
-      if xml_key.get("expires") != "":
-        expires = datetime.datetime.strptime(xml_key.get("expires"), "%Y-%m-%d %H:%M:%S")
-
-      if apiKey.apiKeyInfo == None:
-        apiKeyInfo = APIKeyInfo(currentTime=currentTime, accessMask=accessMask, accountType=accountType, expires=expires, cachedUntil=cachedUntil)
-        apiKeyInfo.save()
-
-        apiKey.apiKeyInfo = apiKeyInfo
-        apiKey.save()
-
+      
+      apiKey.valid        = True
+      apiKey.currentTime  = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
+      apiKey.accessMask   = xml_key.get("accessMask")
+      apiKey.accountType  = xml_key.get("type")
+      apiKey.expires      = None if xml_key.get("expires") == "" else datetime.datetime.strptime(xml_key.get("expires"), "%Y-%m-%d %H:%M:%S")
+      apiKey.cachedUntil  = datetime.datetime.strptime(xml_until.text, "%Y-%m-%d %H:%M:%S")
+      
+      apiKey.save()
+      
+      if apiKey.accountType == "Account":
+        for xml_row in xml_rowset.iter("row"):
+          charAPIKeys = CharacterAPIKeys()
+          
+          charAPIKeys.apiKey_id     = key_id
+          charAPIKeys.character_id  = xml_row.get("characterID")
+          
+          charAPIKeys.save()
+        
       else:
-        apiKeyInfo = apiKey.apiKeyInfo
-
-        apiKeyInfo.currentTime  = currentTime
-        apiKeyInfo.accessMask   = accesMask
-        apiKeyinfo.accountType  = accountType
-        apiKeyInfo.expires      = expires
-        apiKeyInfo.cachedUntil  = cachedUntil
-
-        apiKeyInfo.save()
-
-    # =========================
-    # = import the Characters =
-    # =========================
-
-      newCharIDSet = set()
-      oldCharIDSet = set()
-
-      for xml_row in xml_key.find("rowset"):
-
-        charID    = xml_row.get("characterID")
-        charName  = xml_row.get("characterName")
-        corpID    = xml_row.get("corporationID")
-        corpName  = xml_row.get("corporationName")
-
-        character, created = apiKeyInfo.characters_set.get_or_create(characterID=charID, characterName=charName, corporationID=corpID, corporationName=corpName)
-        newCharIDSet.add(character.id)
-
-
-      for char in apiKeyInfo.characters_set.all():
-        oldCharIDSet.add(char.id)
-
-      differenzCharIDSet = oldCharIDSet - newCharIDSet
-
-      for charID in differenzCharIDSet:
-        Characters.objects.get(pk=charID).delete()
-
-      return True
-
-  def getElementTree(self, key):
-
-    action = "/account/APIKeyInfo.xml.aspx"
-    params = urllib.urlencode({'keyID':key.keyID, 'vCode':key.vCode})
-    header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-
-    connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
-    connection.request("GET", action, params, header)
-
-    xml = connection.getresponse().read()
-    connection.close()
-
-    return etree.fromstring(xml)
-
+        xml_row     = xml_rowset.find("row") 
+        corpAPIKeys = CorporationAPIKeys()
+        
+        corpAPIKeys.apiKey_id       = key_id
+        corpAPIKeys.corporation_id  = xml_row.get("corporationID")
+        corpAPIKeys.provider_id     = xml_row.get("characterID")
+        
+        corpAPIKeys.save()
+        
+    return True
 
 # ============================================================================
 # = Class ImportAssetListTask                                                =

@@ -1,1 +1,1 @@
-./manage.py graph_models eveapi evedb accounts -e -g -o eveats.png
+./manage.py graph_models eve evedb accounts -e -g -o eveats.png

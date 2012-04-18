@@ -113,10 +113,11 @@ class APIKey(models.Model):
   name            = models.CharField(max_length=128)
   user            = models.ForeignKey(User)
   currentTime     = models.DateTimeField()
-  accessMask      = models.IntegerField()
-  accountType     = models.CharField(max_length=255)
+  accessMask      = models.IntegerField(null=True)
+  accountType     = models.CharField(max_length=255, null=True)
   expires         = models.DateTimeField(null=True)
   cachedUntil     = models.DateTimeField()
+  valid           = models.BooleanField(default=True)
 
   def expired(self):
     return self.cachedUntil < datetime.datetime.utcnow()
