@@ -30,31 +30,31 @@ class CorporationAPIKeys(TimeStampedModel):
 
 class Alliance(models.Model):
   allianceID        = models.IntegerField(primary_key=True)
-  allianceName      = models.CharField(max_length=255)
+  allianceName      = models.CharField(max_length=255, null=True)
 
 class Corporation(models.Model):
   corporationID     = models.IntegerField(primary_key=True)
-  corporationName   = models.CharField(max_length=255)
+  corporationName   = models.CharField(max_length=255, null=True)
   ceo               = models.ForeignKey('Character', null=True)
   description       = models.TextField(null=True)
   cachedUntil       = models.DateTimeField(default=datetime.datetime.utcnow(), blank=True)
-  alliances         = models.ManyToManyField('Alliance', through='CorporationAllianceHistory')
-  apiKeys           = models.ManyToManyField('APIKey', through='CorporationAPIKeys')
-  isDeleted         = models.BigIntegerField(default=False)
-  assets = models.ManyToManyField('Asset', through='AssetListCorporation', null=True)
+  alliances         = models.ManyToManyField('Alliance', through='CorporationAllianceHistory', null=True)
+  apiKeys           = models.ManyToManyField('APIKey', through='CorporationAPIKeys', null=True)
+  isDeleted         = models.BooleanField(default=False)
+  assets            = models.ManyToManyField('Asset', through='AssetListCorporation', null=True)
 
   def expired(self):
     return self.cachedUntil < datetime.datetime.utcnow()
 
 class Character(models.Model):
   characterID       = models.IntegerField(primary_key=True)
-  characterName     = models.CharField(max_length=255)
+  characterName     = models.CharField(max_length=255, null=True)
   securityStatus    = models.DecimalField(decimal_places=16, max_digits=18, null=True)
   race              = models.CharField(max_length=64, null=True)
   bloodline         = models.CharField(max_length=64, null=True)
   isDeleted         = models.BooleanField(default=False)
   cachedUntil       = models.DateTimeField(default=datetime.datetime.utcnow(), blank=True)
-  corporations      = models.ManyToManyField('Corporation', through='CharacterEmploymentHistory')
+  corporations      = models.ManyToManyField('Corporation', through='CharacterEmploymentHistory', null=True)
   apiKeys           = models.ManyToManyField('APIKey', through='CharacterAPIKeys', null=True)
   assets            = models.ManyToManyField('Asset', through='AssetListCharacter', null=True)
 
@@ -104,7 +104,7 @@ class Asset(models.Model):
   rawQuantity       = models.IntegerField(null=True, blank=True)
 
 # ============================================================================================
-# = Class APIKey. Note !       =
+# = Class APIKey. Note !                                                                     =
 # ============================================================================================
 
 class APIKey(models.Model):

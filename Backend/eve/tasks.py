@@ -24,28 +24,28 @@ LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
 # ===========================================================================
 
 class LockableTask(Task):
-  
+
   def __init__(self):
     Task.__init__(self)
     self.acquireLock()
-    
+
   def __del__(self):
     self.releaseLock()
-  
+
   #
   # Overwrite getLockID in inherited classes
-  #  
-  
+  #
+
   def getLockID(self):
     return 0
-  
+
   def acquireLock(self):
     cache.add(self.getLockID(), "true", LOCK_EXPIRE)
-    
+
   def releaseLock(self):
     cache.delete(self.getLockID())
-    
-    
+
+
 # ===================================
 # = Update Character from EVE API   =
 # ===================================
@@ -106,28 +106,19 @@ class UpdateCharacter(Task):
                             (errorMessage, errorCode, character.characterID, character.characterName))
           else:
             character.characterName = xml.find("result/characterName").text
-            if character.characterName == "":
-              character.characterName = "-- FAILED TO FETCH FROM API --"
             character.securityStatus = xml.find("result/securityStatus").text
             character.bloodline = xml.find("result/bloodline").text
             character.race = xml.find("result/race").text
             character.cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
             character.save()
 
-            # TODO: this loop is ugly, if we're very bord, we will improve it! maybe...
             for employment in xml.findall("result/rowset[@name='employmentHistory']/row"):
               # first we need the corp
               corporationID = employment.get('corporationID')
 
-              # TODO: correct way to extract the tuple?
               corp, created = Corporation.objects.get_or_create(corporationID=corporationID)
               if created:
                 corp.save()
-
-              # maybe we should update our corp, or if we created
-              # it above, we have to do this to get missing data
-              if corp.expired():
-                # TODO: this must be a subtask, too
                 UpdateCorporation.delay(corp)
 
               startDate = datetime.datetime.strptime(employment.get('startDate'), "%Y-%m-%d %H:%M:%S")
@@ -167,9 +158,6 @@ class UpdateCorporation(Task):
           ceo.characterName = xml.find("result/ceoName").text
           ceo.save()
           logger.info("Created character with id %s" % ceo.characterID)
-
-        if ceo.expired():
-          # TODO: this must be a subtask, too
           UpdateCharacter.delay(ceo)
 
         corporation.ceo = ceo
@@ -184,39 +172,38 @@ class UpdateCorporation(Task):
 # ============================================================================
 
 class UpdateCharacterTask(Task):
-  
+
   def run(self, char_id):
     print "UpdateCharacterTask : " + str(char_id)
-    
+
     char    = Character.objects.get(pk=char_id) if Characters.objects.get(pk=char_id).exists() else Character(characterID=char_id)
-    
+
     action  = "/eve/CharacterInfo.xml.aspx"
     params  = urllib.urlencode({'characterID':char_id})
     xml     = getXMLFromAPI(action, params)
-    
+
     xml_current = xml.find("currentTime")
     xml_result  = xml.find("result")
-    xml_rowset  = xml.find("result/rowset")
-    xml_until   = xml.find("cachedUntil")
-    
+    xml_rowset  = xml.find("result/rowset[@name='characters']")
+
     char.currentTime    = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
     char.characterName  = xml_result.find("characterName").text
     char.race           = xml_result.find("race").text
     char.bloodline      = xml_result.find("bloodline").text
     char.securityStatus = Decimal(xml_rsult.find("securityStatus").text)
-    
-    
+
+
     for xml_row in xml_rowset.iter("row"):
       obj = CharacterEmploymentHistory()
-      
+
       obj.character_id    = char_id
       obj.corporation_id  = xml_row.get("corporationID")
       obj.startDate       = datetime.datetime.strptime(xml_row.get("startDate"), "%Y-%m-%d %H:%M:%S")
-      
+
       obj.save()
-    
+
     return True
- 
+
 # ============================================================================
 # = Class ImportAPIKeyInfoTask                                               =
 # ============================================================================
@@ -227,51 +214,48 @@ class UpdateAPIKeyInfoTask(Task):
     print "ImportAPIKeyInfoTask : " + str(key_id)
 
     apiKey  = APIKey.objects.get(pk=key_id)
-    
+
     action  = "/account/APIKeyInfo.xml.aspx"
     params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode})
     xml     = getXMLFromAPI(action, params)
-    
+
     if xml.find("error") != None:
       apiKey.valid = False
-      
+
     else:
       xml_current = xml.find("currentTime")
       xml_key     = xml.find("result/key")
       xml_rowset  = xml.find("result/key/rowset")
       xml_until   = xml.find("cachedUntil")
-      
-      currentTime = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
-      cachedUntil = datetime.datetime.strptime(xml_until.text, "%Y-%m-%d %H:%M:%S")
-      
+
       apiKey.valid        = True
       apiKey.currentTime  = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
       apiKey.accessMask   = xml_key.get("accessMask")
       apiKey.accountType  = xml_key.get("type")
       apiKey.expires      = None if xml_key.get("expires") == "" else datetime.datetime.strptime(xml_key.get("expires"), "%Y-%m-%d %H:%M:%S")
       apiKey.cachedUntil  = datetime.datetime.strptime(xml_until.text, "%Y-%m-%d %H:%M:%S")
-      
+
       apiKey.save()
-      
+
       if apiKey.accountType == "Account":
         for xml_row in xml_rowset.iter("row"):
           charAPIKeys = CharacterAPIKeys()
-          
+
           charAPIKeys.apiKey_id     = key_id
           charAPIKeys.character_id  = xml_row.get("characterID")
-          
+
           charAPIKeys.save()
-        
+
       else:
-        xml_row     = xml_rowset.find("row") 
+        xml_row     = xml_rowset.find("row")
         corpAPIKeys = CorporationAPIKeys()
-        
+
         corpAPIKeys.apiKey_id       = key_id
         corpAPIKeys.corporation_id  = xml_row.get("corporationID")
         corpAPIKeys.provider_id     = xml_row.get("characterID")
-        
+
         corpAPIKeys.save()
-        
+
     return True
 
 # ============================================================================
