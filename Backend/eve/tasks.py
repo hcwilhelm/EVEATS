@@ -17,12 +17,9 @@ import urllib
 import datetime
 from decimal import *
 import logging
+import functools
 logger = logging.getLogger(__name__)
 
-
-# ===========================================================================
-# = Celery Tasks : All model updates should be performed as a seperate task =
-# ===========================================================================
 
 # ===========================================================================
 # = Decorator to allow only one update task for each object at time         =
@@ -31,11 +28,15 @@ logger = logging.getLogger(__name__)
 LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
 
 def locktask(function):
+  
+  @functools.wraps(function)
   def wrapper(object):
-    lock_id = function.__name__ + "-" + str(object.id)
+    lock_id = function.__name__ + "-" + str(object.pk)
     acquire_lock = lambda: cache.add(lock_id, "true", LOCK_EXPIRE)
     release_lock = lambda: cache.delete(lock_id)
 
+    print object
+    
     if acquire_lock():
       try:
         print "Locked : " + lock_id
@@ -67,75 +68,77 @@ class UpdateAllCharacters(Task):
 
     return True
 
-class UpdateCharacter(Task):
-  def run(self, character, force=False):
-    returnVal = False
-    if force or (character.expired and not character.isDeleted):
-      lock_id = "%s-lock-%s" % (self.name, character.characterID)
-      # cache.add fails if if the key already exists
-      acquire_lock = lambda: cache.add(lock_id, "true", LOCK_EXPIRE)
-      # memcached delete is very slow, but we have to use it to take
-      # advantage of using add() for atomic locking
-      release_lock = lambda: cache.delete(lock_id)
+# ============================================================================
+# = Class UpdateCharacter                                                    =
+# ============================================================================
 
-      if acquire_lock():
-        try:
-          keys = character.apiKeys.all()
-          logger.info("Found %s API Keys for Character '%s'" % (keys.count(), character.characterName))
+@task
+@locktask
+def updateCharacter(character):
+  
+  print "updateCharacter : " + str(character.pk)
+  
+  action = "/eve/CharacterInfo.xml.aspx"
+  params = urllib.urlencode({'characterID':character.characterID})
+  xml = getXMLFromAPI(action=action, params=params)
 
-          action = "/eve/CharacterInfo.xml.aspx"
-          params = urllib.urlencode({'characterID':character.characterID})
-          xml = getXMLFromAPI(action=action, params=params)
+  error = xml.find("error")
+  
+  # ===================
+  # = Error handling  =
+  # ===================
+  
+  if error is not None:
+    errorCode     = error.get('code')
+    errorMessage  = error.text
 
-          error = xml.find("error")
-          if error is not None:
-            errorCode = error.get('code')
-            errorMessage = error.text
+    if errorCode == "105":
+      logger.warning("Marking character '%s' with id '%s' as deleted, got errorcode 105 from EVE API" % (character.characterName, character.characterID))
+      
+      character.isDeleted = True
+      character.save()
+      
+    elif errorCode == "522":
+      logging.warning("Got errorcode 522 for characterID '%s' (Name: '%s') - setting cachedUntil +1day" % (character.characterID, character.characterName))
+      
+      character.cachedUntil = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+      character.save()
+    
+    else:
+      logging.error("Got this error from EVE API: '%s' - Code '%s' - characterID '%s' - characterName '%s'" % (errorMessage, errorCode, character.characterID, character.characterName))
+          
+  # ============
+  # = No error =
+  # ============
+  
+  else:
+    character.characterName     = xml.find("result/characterName").text
+    character.securityStatus    = xml.find("result/securityStatus").text
+    character.bloodline         = xml.find("result/bloodline").text
+    character.race              = xml.find("result/race").text
+    character.cachedUntil       = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
+    
+    character.save()
 
-            if errorCode == "105":
-              logger.warning("Marking character '%s' with id '%s' as deleted, got errorcode 105 from EVE API" %
-                             (character.characterName, character.characterID))
-              character.isDeleted = True
-              character.save()
-            elif errorCode == "522":
-              logging.warning("Got errorcode 522 for characterID '%s' (Name: '%s') - setting cachedUntil +1day" %
-                              (character.characterID, character.characterName))
-              character.cachedUntil = datetime.datetime.utcnow() + datetime.timedelta(days=1)
-              character.save()
-            else:
-              # unknown error
-              logging.error("Got this error from EVE API: '%s' - Code '%s' - characterID '%s' - characterName '%s'" %
-                            (errorMessage, errorCode, character.characterID, character.characterName))
-          else:
-            character.characterName = xml.find("result/characterName").text
-            character.securityStatus = xml.find("result/securityStatus").text
-            character.bloodline = xml.find("result/bloodline").text
-            character.race = xml.find("result/race").text
-            character.cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
-            character.save()
+    for employment in xml.findall("result/rowset[@name='employmentHistory']/row"):
+      
+      corp, created = Corporation.objects.get_or_create(corporationID=employment.get('corporationID'))
+      
+      #
+      # If created we could start an Corporation update job.
+      # Anyways a new created character is always expired so it will be update
+      # by the next query.
+      #
+      
+      startDate = datetime.datetime.strptime(employment.get('startDate'), "%Y-%m-%d %H:%M:%S")
 
-            for employment in xml.findall("result/rowset[@name='employmentHistory']/row"):
-              # first we need the corp
-              corporationID = employment.get('corporationID')
-
-              corp, created = Corporation.objects.get_or_create(corporationID=corporationID)
-              if created:
-                corp.save()
-                UpdateCorporation.delay(corp)
-
-              startDate = datetime.datetime.strptime(employment.get('startDate'), "%Y-%m-%d %H:%M:%S")
-
-              newEmployment, created =  CharacterEmploymentHistory.objects.get_or_create(character=character,
-                corporation=corp, startDate=startDate)
-              if created:
-                newEmployment.save()
-            returnVal = True
-        finally:
-          release_lock()
-      else:
-        logging.warning("Unable to acquire lock to updating characterID '%s' - characterName '%s'" %
-                        (character.characterID, character.characterName))
-    return returnVal
+      CharacterEmploymentHistory.objects.get_or_create(character=character, corporation=corp, startDate=startDate)
+  
+  # ================
+  # = Update done  =
+  # ================
+  
+  return True
 
 
 
@@ -173,41 +176,9 @@ class UpdateCorporation(Task):
 # = Class UpdateCharacter                                                    =
 # ============================================================================
 
-class UpdateCharacterTask(Task):
-
-  def run(self, char_id):
-    print "UpdateCharacterTask : " + str(char_id)
-
-    char    = Character.objects.get(pk=char_id) if Characters.objects.get(pk=char_id).exists() else Character(characterID=char_id)
-
-    action  = "/eve/CharacterInfo.xml.aspx"
-    params  = urllib.urlencode({'characterID':char_id})
-    xml     = getXMLFromAPI(action, params)
-
-    xml_current = xml.find("currentTime")
-    xml_result  = xml.find("result")
-    xml_rowset  = xml.find("result/rowset[@name='characters']")
-
-    char.currentTime    = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
-    char.characterName  = xml_result.find("characterName").text
-    char.race           = xml_result.find("race").text
-    char.bloodline      = xml_result.find("bloodline").text
-    char.securityStatus = Decimal(xml_rsult.find("securityStatus").text)
-
-
-    for xml_row in xml_rowset.iter("row"):
-      obj = CharacterEmploymentHistory()
-
-      obj.character_id    = char_id
-      obj.corporation_id  = xml_row.get("corporationID")
-      obj.startDate       = datetime.datetime.strptime(xml_row.get("startDate"), "%Y-%m-%d %H:%M:%S")
-
-      obj.save()
-
-    return True
 
 # ============================================================================
-# = Class ImportAPIKeyInfoTask                                               =
+# = updateAPIKey                                                             =
 # ============================================================================
 
 @task
@@ -220,7 +191,8 @@ def updateAPIKey(apiKey):
   xml     = getXMLFromAPI(action, params)
 
   if xml.find("error") != None:
-    apiKey.valid = False
+    apiKey.valid        = False
+    apiKey.cachedUntil  = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
 
   else:
     xml_current = xml.find("currentTime")
@@ -242,6 +214,9 @@ def updateAPIKey(apiKey):
         
         character, created = Character.objects.get_or_create(pk=xml_row.get("characterID"))
         
+        if created:
+          updateCharacter.delay(character)
+          
         #
         # If created we could start an character update job.
         # Anyways a new created character is always expired so it will be update
