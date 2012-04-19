@@ -318,101 +318,158 @@ def updateAPIKey(apiKey):
 # = Class ImportAssetListTask                                                =
 # ============================================================================
 
+
+#
+# this Taks excepts Character or Corporation objects !!!
+# Maybe it is useful to extend this to APIKey objects also, dunno 
+#
+
 @task
 @locktask
-def updateAssetListCharacter(character):
+def updateAssetList(object):
 
-    print "ImportAssetListTask : " + str(char_id)
-
-    character = Characters.objects.get(pk=char_id)
-
-    # ============
-    # = clean up =
-    # ============
-
-    character.assetlist_set.all().delete()
-
-    # ===========================
-    # = Get the XML elementTree =
-    # ===========================
-
-    xml_root  = self.getElementTree(character)
-
-    # ===================
-    # = Check for Error =
-    # ===================
-
-    if xml_root.find("error") != None:
+    print "ImportAssetListTask : " + str(object.pk)
+    
+    xml_root = None
+    
+    #
+    # Check if the object is a Character
+    #
+    
+    if type(object) == Character:
+      
+      #print object.characterName
+      
+      #
+      # Check if the object has a related APIKey
+      #
+      
+      if not object.apiKeys.all().exists():
+        return False
+      
+      apiKey  = object.apiKeys.all()[0]
+      char    = object
+      action  = "/char/AssetList.xml.aspx"
+      params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode, 'characterID':char.characterID})
+      
+      xml_root     = getXMLFromAPI(action, params)
+    
+    #
+    # Check if the object is a Corporation
+    #
+      
+    elif type(object) == Corporation:
+      
+      #
+      # Check if the object has a related APIKey
+      #
+      
+      if not object.apiKeys.all().exists():
+        return False
+        
+      apiKey  = object.apiKeys.all()[0]
+      char    = CorporationAPIKeys.objects.get(apiKey=apiKey, corporation=object).provider
+      action  = "/corp/AssetList.xml.aspx"
+      params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode, 'characterID':char.characterID})
+      
+      xml_root     = getXMLFromAPI(action, params)
+    
+    #
+    # Do nothing for all other object types
+    #
+      
+    else:
       return False
 
-    # =============
-    # = No Error  =
-    # =============
+    #
+    # Clean up older assets
+    #
+    
+    if object.assetList != None:
+      object.assetList.asset_set.all().delete()
 
-    else:
+    #
+    # Error Handling 
+    #
 
-      xml_assets  = xml_root.find("result/rowset")
-      xml_current = xml_root.find("currentTime")
-      xml_until   = xml_root.find("cachedUntil")
+    if xml_root.find("error") != None:
+      print xml_root.find("error").text
+      return False
 
-      currentTime = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
-      cachedUntil = datetime.datetime.strptime(xml_until.text, "%Y-%m-%d %H:%M:%S")
+    #
+    # No Error
+    #
 
-      assetList = AssetList(character=character, currentTime=currentTime, cachedUntil=cachedUntil)
-      assetList.save()
+    xml_assets  = xml_root.find("result/rowset")
+    xml_current = xml_root.find("currentTime")
+    xml_until   = xml_root.find("cachedUntil")
 
-      stack   = [None]
-      parent  = None
-      context = etree.iterwalk(xml_assets, events=("start", "end"))
+    currentTime = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
+    cachedUntil = datetime.datetime.strptime(xml_until.text, "%Y-%m-%d %H:%M:%S")
 
-      total = xml_assets.xpath('count(//row)')
-      current = 0
+    assetList = AssetList(currentTime=currentTime, cachedUntil=cachedUntil)
+    assetList.save()
+    
+    object.assetList = assetList
+    object.save()
 
-      for action, element in context:
-        if element.tag == "rowset":
+    stack   = [None]
+    parent  = None
+    context = etree.iterwalk(xml_assets, events=("start", "end"))
 
-          if element.get("name") == "assets":
-            continue
+    total   = xml_assets.xpath('count(//row)')
+    current = 0
 
-          if action == "start" and element.get("name") == "contents":
-            stack.append(parent)
+    for action, element in context:
+      if element.tag == "rowset":
 
-          if action == "end" and element.get("name") == "contents":
-            stack.pop()
+        if element.get("name") == "assets":
+          continue
 
-        if element.tag == "row" and action == "start":
-          asset             = Assets()
-          asset.assetList   = assetList
-          asset.parent      = stack[-1]
-          asset.itemID      = element.get("itemID")
+        if action == "start" and element.get("name") == "contents":
+          stack.append(parent)
 
-          if element.get("locationID") != None:
+        if action == "end" and element.get("name") == "contents":
+          stack.pop()
 
-            # ==========================================================================
-            # = officeID to stationID conversion refer to eve dev for more information =
-            # ==========================================================================
+      if element.tag == "row" and action == "start":
+        asset             = Asset()
+        asset.assetList   = assetList
+        asset.parent      = stack[-1]
+        asset.itemID      = element.get("itemID")
 
-            locationID = element.get("locationID")
+        if element.get("locationID") != None:
 
-            if locationID >= 66000000 and locationID < 67000000:
-                locationID -= 6000001
+          # ==========================================================================
+          # = officeID to stationID conversion refer to eve dev for more information =
+          # ==========================================================================
 
-            asset.locationID_id  = locationID
+          locationID = element.get("locationID")
 
-          asset.typeID_id   = element.get("typeID")
-          asset.quantity    = element.get("quantity")
-          asset.flag_id     = element.get("flag")
-          asset.singleton   = element.get("singleton")
-          rawQuantity       = element.get("rawQuantity")
+          if locationID >= 66000000 and locationID < 67000000:
+              locationID -= 6000001
 
-          asset.save()
-          parent = asset
+          asset.locationID_id  = locationID
 
-          current += 1
-          UpdateAssetListTask.update_state(self, state="PROGRESS", meta={"current": current, "total": int(total)})
+        asset.typeID_id   = element.get("typeID")
+        asset.quantity    = element.get("quantity")
+        asset.flag_id     = element.get("flag")
+        asset.singleton   = element.get("singleton")
+        rawQuantity       = element.get("rawQuantity")
 
-      print "ImportAssetListTask : " + str(char_id) + " : Done"
-      return True
+        asset.save()
+        parent = asset
+
+        current += 1
+        
+        #
+        # Custom state to expose progress to the Frontend ;) 
+        #
+        
+        updateAssetList.update_state(state="PROGRESS", meta={"current": current, "total": int(total)})
+
+    print "ImportAssetListTask : " + str(object.pk) + " : Done"
+    return True
 
 
 

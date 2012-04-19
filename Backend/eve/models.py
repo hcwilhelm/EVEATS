@@ -41,7 +41,7 @@ class Corporation(models.Model):
   alliances         = models.ManyToManyField('Alliance', through='CorporationAllianceHistory', null=True)
   apiKeys           = models.ManyToManyField('APIKey', through='CorporationAPIKeys', null=True)
   isDeleted         = models.BooleanField(default=False)
-  assetList         = models.ForeignKey('AssetList', null=True)
+  assetList         = models.ForeignKey('AssetList', null=True, on_delete=models.SET_NULL)
 
   def expired(self):
     return self.cachedUntil < datetime.datetime.utcnow()
@@ -56,7 +56,7 @@ class Character(models.Model):
   cachedUntil       = models.DateTimeField(default=datetime.datetime.utcnow(), blank=True)
   corporations      = models.ManyToManyField('Corporation', through='CharacterEmploymentHistory', null=True)
   apiKeys           = models.ManyToManyField('APIKey', through='CharacterAPIKeys', null=True)
-  assetList         = models.ForeignKey('AssetList', null=True)
+  assetList         = models.ForeignKey('AssetList', null=True, on_delete=models.SET_NULL)
 
   def expired(self):
     return self.cachedUntil < datetime.datetime.utcnow()
