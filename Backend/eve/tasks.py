@@ -68,7 +68,20 @@ def locktask(function):
         print "Unlocked : " + lock_id
     
   return wrapper
+  
+# =============================================================================
+# = Helper functions                                                          =
+# =============================================================================
 
+def getXMLFromAPI(action, params):
+    header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+
+    connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
+    connection.request("GET", action, params, header)
+
+    xml = connection.getresponse().read()
+    connection.close()
+    return etree.fromstring(xml)
 
 # ===================================
 # = Update Character from EVE API   =
@@ -275,7 +288,7 @@ def updateAPIKey(apiKey):
     else:
       for xml_row in xml_rowset.iter("row"):
         
-        character, created = Character.objects.get_ort_create(pk=xml_row.get("characterID"))
+        character, created = Character.objects.get_or_create(pk=xml_row.get("characterID"))
         
         if created:
           updateCharacter.delay(character)
@@ -305,9 +318,9 @@ def updateAPIKey(apiKey):
 # = Class ImportAssetListTask                                                =
 # ============================================================================
 
-class UpdateAssetListTask(Task):
-
-  def run(self, char_id):
+@task
+@locktask
+def updateAssetListCharacter(character):
 
     print "ImportAssetListTask : " + str(char_id)
 
@@ -401,37 +414,7 @@ class UpdateAssetListTask(Task):
       print "ImportAssetListTask : " + str(char_id) + " : Done"
       return True
 
-  def getElementTree(self, char):
-
-    action = ""
-
-    if char.apiKeyInfo.accountType == "Account":
-      action = "/char/AssetList.xml.aspx"
-
-    if char.apiKeyInfo.accountType == "Corporation":
-      action = "/corp/AssetList.xml.aspx"
-
-    key = APIKey.objects.get(apiKeyInfo=char.apiKeyInfo)
-
-    params = urllib.urlencode({'keyID':key.keyID, 'vCode':key.vCode, 'characterID':char.characterID})
-    header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-
-    connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
-    connection.request("GET", action, params, header)
-
-    xml = connection.getresponse().read()
-    connection.close()
-
-    return etree.fromstring(xml)
 
 
 
-def getXMLFromAPI(action, params):
-    header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
 
-    connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
-    connection.request("GET", action, params, header)
-
-    xml = connection.getresponse().read()
-    connection.close()
-    return etree.fromstring(xml)

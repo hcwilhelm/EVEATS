@@ -41,7 +41,7 @@ class Corporation(models.Model):
   alliances         = models.ManyToManyField('Alliance', through='CorporationAllianceHistory', null=True)
   apiKeys           = models.ManyToManyField('APIKey', through='CorporationAPIKeys', null=True)
   isDeleted         = models.BooleanField(default=False)
-  assets            = models.ManyToManyField('Asset', through='AssetListCorporation', null=True)
+  assetList         = models.ForeignKey('AssetList', null=True)
 
   def expired(self):
     return self.cachedUntil < datetime.datetime.utcnow()
@@ -56,7 +56,7 @@ class Character(models.Model):
   cachedUntil       = models.DateTimeField(default=datetime.datetime.utcnow(), blank=True)
   corporations      = models.ManyToManyField('Corporation', through='CharacterEmploymentHistory', null=True)
   apiKeys           = models.ManyToManyField('APIKey', through='CharacterAPIKeys', null=True)
-  assets            = models.ManyToManyField('Asset', through='AssetListCharacter', null=True)
+  assetList         = models.ForeignKey('AssetList', null=True)
 
   def expired(self):
     return self.cachedUntil < datetime.datetime.utcnow()
@@ -71,29 +71,19 @@ class CorporationAllianceHistory(TimeStampedModel):
   alliance          = models.ForeignKey('Alliance')
   startDate         = models.DateTimeField()
 
-class AssetListCharacter(TimeStampedModel):
-  character         = models.ForeignKey('Character')
-  asset             = models.ForeignKey('Asset')
+class AssetList(TimeStampedModel):
   currentTime       = models.DateTimeField()
   cachedUntil       = models.DateTimeField()
 
   def expired(self):
      return self.cachedUntil < datetime.datetime.utcnow()
 
-class AssetListCorporation(TimeStampedModel):
-  corporation = models.ForeignKey('Corporation')
-  asset       = models.ForeignKey('Asset')
-  currentTime = models.DateTimeField()
-  cachedUntil = models.DateTimeField()
-
-  def expired(self):
-    return self.cachedUntil < datetime.datetime.utcnow()
-
 # =============================================================================================
 # = /char/AssetList.xml.aspx                                                                  =
 # =============================================================================================
 
 class Asset(models.Model):
+  assetList         = models.ForeignKey('AssetList')
   parent            = models.ForeignKey('self', null=True, blank=True)
   itemID            = models.BigIntegerField()
   locationID        = models.ForeignKey('evedb.mapDenormalize', null=True, blank=True)
@@ -112,11 +102,11 @@ class APIKey(models.Model):
   vCode           = models.CharField(max_length=64, null=False)
   name            = models.CharField(max_length=128)
   user            = models.ForeignKey(User)
-  currentTime     = models.DateTimeField()
+  currentTime     = models.DateTimeField(default=datetime.datetime.utcnow(), blank=True)
   accessMask      = models.IntegerField(null=True)
   accountType     = models.CharField(max_length=255, null=True)
   expires         = models.DateTimeField(null=True)
-  cachedUntil     = models.DateTimeField()
+  cachedUntil     = models.DateTimeField(default=datetime.datetime.utcnow(), blank=True)
   valid           = models.BooleanField(default=True)
 
   def expired(self):
