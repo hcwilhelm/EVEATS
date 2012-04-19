@@ -50,7 +50,7 @@ LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
 
 def locktask(function):
   
-  @functools.wraps(function)
+  @wraps(function)
   def wrapper(object):
     lock_id = function.__name__ + "-" + str(object.pk)
     acquire_lock = lambda: cache.add(lock_id, "true", LOCK_EXPIRE)
@@ -90,7 +90,7 @@ class UpdateAllCharacters(Task):
     return True
 
 # ============================================================================
-# = Class UpdateCharacter                                                    =
+# = task updateCharacter                                                     =
 # ============================================================================
 
 @task
@@ -151,6 +151,9 @@ def updateCharacter(character):
       # by the next query.
       #
       
+      if created:
+        updateCorporation(corp)
+      
       startDate = datetime.datetime.strptime(employment.get('startDate'), "%Y-%m-%d %H:%M:%S")
 
       CharacterEmploymentHistory.objects.get_or_create(character=character, corporation=corp, startDate=startDate)
@@ -161,36 +164,59 @@ def updateCharacter(character):
   
   return True
 
+# ============================================================================
+# = task updateCorporation                                                   =
+# ============================================================================
 
+@task
+@locktask
+def updateCorporation(corporation):
+  
+  print "updateCorporation : " + str(corporation.pk)
+  
+  action = "/corp/CorporationSheet.xml.aspx"
+  params = urllib.urlencode({'corporationID':corporation.corporationID})
+  xml = getXMLFromAPI(action=action, params=params)
 
-class UpdateCorporation(Task):
-  def run(self, corporation, force=False):
-    if force or corporation.expired():
-      action = "/corp/CorporationSheet.xml.aspx"
-      params = urllib.urlencode({'corporationID':corporation.corporationID})
-      xml = getXMLFromAPI(action=action, params=params)
+  # ===================
+  # = Error Handling  =
+  # ===================
+  
+  if xml.find("error") is not None:
+    return False
+  
+  # =============
+  # = No Error  =
+  # =============
+  
+  else:
+    corporation.corporationName = xml.find("result/corporationName").text
+    corporation.description     = xml.find("result/description").text
 
-      if xml.find("error") is not None:
-        return False
-      else:
-        corporation.corporationName = xml.find("result/corporationName").text
-        corporation.description = xml.find("result/description").text
+    ceo, created = Character.objects.get_or_create(characterID=xml.find("result/ceoID").text)
+    
+    if created:
+      
+      # we will store the ceo name here for noob corps, those chars are not
+      # fetchable via api so we can't get the name during the update later
+      # and storing chars without names would be very ugly!
+      
+      #
+      # NPC characterID's can be identified via the static data dump !
+      #
+      
+      logger.info("Created character with id %s" % ceo.characterID)
+      updateCharacter.delay(ceo)
 
-        ceo, created = Character.objects.get_or_create(characterID = xml.find("result/ceoID").text)
-        if created:
-          # we will store the ceo name here for noob corps, those chars are not
-          # fetchable via api so we can't get the name during the update later
-          # and storing chars without names would be very ugly!
-          ceo.characterName = xml.find("result/ceoName").text
-          ceo.save()
-          logger.info("Created character with id %s" % ceo.characterID)
-          UpdateCharacter.delay(ceo)
+    corporation.ceo         = ceo
+    corporation.cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
+    corporation.save()
 
-        corporation.ceo = ceo
-        corporation.cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
-        corporation.save()
-
-        return True
+  # ================
+  # = Update done  =
+  # ================
+  
+  return True
 
 
 # ============================================================================
@@ -251,6 +277,9 @@ def updateAPIKey(apiKey):
         
         character, created = Character.objects.get_ort_create(pk=xml_row.get("characterID"))
         
+        if created:
+          updateCharacter.delay(character)
+          
         #
         # If created we could start an character update job.
         # Anyways a new created character is always expired so it will be update
@@ -258,6 +287,9 @@ def updateAPIKey(apiKey):
         #
         
         corporation, created = Corporation.objects.get_or_create(pk=xml_row.get("corporationID"))
+        
+        if created:
+          updateCorporation(corporation)
         
         #
         # If created we could start an corporation update job.
