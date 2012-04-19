@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from celery.task import Task
+from celery.task import task
 from lxml import etree
 from eve.models import *
 import httplib
@@ -18,32 +19,33 @@ from decimal import *
 import logging
 logger = logging.getLogger(__name__)
 
-LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
+
 # ===========================================================================
 # = Celery Tasks : All model updates should be performed as a seperate task =
 # ===========================================================================
 
-class LockableTask(Task):
+# ===========================================================================
+# = Decorator to allow only one update task for each object at time         =
+# ===========================================================================
 
-  def __init__(self):
-    Task.__init__(self)
-    self.acquireLock()
+LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
 
-  def __del__(self):
-    self.releaseLock()
+def locktask(function):
+  def wrapper(object):
+    lock_id = function.__name__ + "-" + str(object.id)
+    acquire_lock = lambda: cache.add(lock_id, "true", LOCK_EXPIRE)
+    release_lock = lambda: cache.delete(lock_id)
 
-  #
-  # Overwrite getLockID in inherited classes
-  #
-
-  def getLockID(self):
-    return 0
-
-  def acquireLock(self):
-    cache.add(self.getLockID(), "true", LOCK_EXPIRE)
-
-  def releaseLock(self):
-    cache.delete(self.getLockID())
+    if acquire_lock():
+      try:
+        print "Locked : " + lock_id
+        function(object)
+    
+      finally:
+        release_lock()
+        print "Unlocked : " + lock_id
+    
+  return wrapper
 
 
 # ===================================
@@ -208,55 +210,68 @@ class UpdateCharacterTask(Task):
 # = Class ImportAPIKeyInfoTask                                               =
 # ============================================================================
 
-class UpdateAPIKeyInfoTask(Task):
+@task
+@locktask
+def updateAPIKey(apiKey):
+  print "ImportAPIKeyInfoTask : " + str(apiKey.id)
 
-  def run(self, key_id):
-    print "ImportAPIKeyInfoTask : " + str(key_id)
+  action  = "/account/APIKeyInfo.xml.aspx"
+  params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode})
+  xml     = getXMLFromAPI(action, params)
 
-    apiKey  = APIKey.objects.get(pk=key_id)
+  if xml.find("error") != None:
+    apiKey.valid = False
 
-    action  = "/account/APIKeyInfo.xml.aspx"
-    params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode})
-    xml     = getXMLFromAPI(action, params)
+  else:
+    xml_current = xml.find("currentTime")
+    xml_key     = xml.find("result/key")
+    xml_rowset  = xml.find("result/key/rowset")
+    xml_until   = xml.find("cachedUntil")
 
-    if xml.find("error") != None:
-      apiKey.valid = False
+    apiKey.valid        = True
+    apiKey.currentTime  = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
+    apiKey.accessMask   = xml_key.get("accessMask")
+    apiKey.accountType  = xml_key.get("type")
+    apiKey.expires      = None if xml_key.get("expires") == "" else datetime.datetime.strptime(xml_key.get("expires"), "%Y-%m-%d %H:%M:%S")
+    apiKey.cachedUntil  = datetime.datetime.strptime(xml_until.text, "%Y-%m-%d %H:%M:%S")
+
+    apiKey.save()
+
+    if apiKey.accountType == "Account":
+      for xml_row in xml_rowset.iter("row"):
+        
+        character, created = Character.objects.get_or_create(pk=xml_row.get("characterID"))
+        
+        #
+        # If created we could start an character update job.
+        # Anyways a new created character is always expired so it will be update
+        # by the next query.
+        #
+        
+        CharacterAPIKeys.objects.get_or_create(apiKey=apiKey, character=character)
 
     else:
-      xml_current = xml.find("currentTime")
-      xml_key     = xml.find("result/key")
-      xml_rowset  = xml.find("result/key/rowset")
-      xml_until   = xml.find("cachedUntil")
+      for xml_row in xml_rowset.iter("row"):
+        
+        character, created = Character.objects.get_ort_create(pk=xml_row.get("characterID"))
+        
+        #
+        # If created we could start an character update job.
+        # Anyways a new created character is always expired so it will be update
+        # by the next query.
+        #
+        
+        corporation, created = Corporation.objects.get_or_create(pk=xml_row.get("corporationID"))
+        
+        #
+        # If created we could start an corporation update job.
+        # Anyways a new created character is always expired so it will be update
+        # by the next query.
+        #
+        
+        CorporationAPIKeys.objects.get_or_create(apiKey=apiKey, corporation=corporation, provider=character)
 
-      apiKey.valid        = True
-      apiKey.currentTime  = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
-      apiKey.accessMask   = xml_key.get("accessMask")
-      apiKey.accountType  = xml_key.get("type")
-      apiKey.expires      = None if xml_key.get("expires") == "" else datetime.datetime.strptime(xml_key.get("expires"), "%Y-%m-%d %H:%M:%S")
-      apiKey.cachedUntil  = datetime.datetime.strptime(xml_until.text, "%Y-%m-%d %H:%M:%S")
-
-      apiKey.save()
-
-      if apiKey.accountType == "Account":
-        for xml_row in xml_rowset.iter("row"):
-          charAPIKeys = CharacterAPIKeys()
-
-          charAPIKeys.apiKey_id     = key_id
-          charAPIKeys.character_id  = xml_row.get("characterID")
-
-          charAPIKeys.save()
-
-      else:
-        xml_row     = xml_rowset.find("row")
-        corpAPIKeys = CorporationAPIKeys()
-
-        corpAPIKeys.apiKey_id       = key_id
-        corpAPIKeys.corporation_id  = xml_row.get("corporationID")
-        corpAPIKeys.provider_id     = xml_row.get("characterID")
-
-        corpAPIKeys.save()
-
-    return True
+  return True
 
 # ============================================================================
 # = Class ImportAssetListTask                                                =
