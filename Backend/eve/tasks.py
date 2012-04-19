@@ -5,19 +5,40 @@
 #  Created by Hans Christian Wilhelm on 2012-02-15.
 #  Copyright 2012 scienceondope.org All rights reserved.
 #
+
+# ===========================================================================
+# = Import Models                                                           =
+# ===========================================================================
+
+from eve.models import *
+
+# ===========================================================================
+# = Import django modules                                                   =
+# ===========================================================================
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
+
+# ===========================================================================
+# = Import celery modules                                                   =
+# ===========================================================================
+
 from celery.task import Task
 from celery.task import task
+
+# ===========================================================================
+# = Import general python modules                                           =
+# ===========================================================================
+
 from lxml import etree
-from eve.models import *
+from functools import wraps
 import httplib
 import urllib
 import datetime
 from decimal import *
 import logging
-import functools
+
 logger = logging.getLogger(__name__)
 
 
