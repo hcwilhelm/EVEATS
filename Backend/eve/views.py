@@ -23,8 +23,6 @@ from django.utils import simplejson
 from django.db.models.query import QuerySet
 from celery.task.sets import TaskSet
 
-from itertools import chain
-
 # ==========================
 # = Common Response Class  =
 # ==========================
@@ -189,4 +187,5 @@ def corporations(request):
 # ================
 # = Query Assets =
 # ================
+
 
