@@ -51,17 +51,15 @@ LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
 def locktask(function):
   
   @wraps(function)
-  def wrapper(object):
-    lock_id = function.__name__ + "-" + str(object.pk)
+  def wrapper(object, *args, **kwargs):
+    lock_id = function.__name__ + "-" + str(object)
     acquire_lock = lambda: cache.add(lock_id, "true", LOCK_EXPIRE)
     release_lock = lambda: cache.delete(lock_id)
-
-    print object
     
     if acquire_lock():
       try:
         print "Locked : " + lock_id
-        function(object)
+        function(object, *args, **kwargs)
     
       finally:
         release_lock()
@@ -108,9 +106,11 @@ class UpdateAllCharacters(Task):
 
 @task
 @locktask
-def updateCharacter(character):
+def updateCharacter(character_id):
   
-  print "updateCharacter : " + str(character.pk)
+  print "updateCharacter : " + str(character_id)
+  
+  character = Character.objects.get(pk=character_id)
   
   action = "/eve/CharacterInfo.xml.aspx"
   params = urllib.urlencode({'characterID':character.characterID})
@@ -165,7 +165,7 @@ def updateCharacter(character):
       #
       
       if created:
-        updateCorporation(corp)
+        updateCorporation(corp.pk)
       
       startDate = datetime.datetime.strptime(employment.get('startDate'), "%Y-%m-%d %H:%M:%S")
 
@@ -183,9 +183,11 @@ def updateCharacter(character):
 
 @task
 @locktask
-def updateCorporation(corporation):
+def updateCorporation(corporation_id):
   
-  print "updateCorporation : " + str(corporation.pk)
+  print "updateCorporation : " + str(corporation_id)
+  
+  corporation = Corporation.objects.get(pk=corporation_id)
   
   action = "/corp/CorporationSheet.xml.aspx"
   params = urllib.urlencode({'corporationID':corporation.corporationID})
@@ -219,7 +221,7 @@ def updateCorporation(corporation):
       #
       
       logger.info("Created character with id %s" % ceo.characterID)
-      updateCharacter.delay(ceo)
+      updateCharacter.delay(ceo.pk)
 
     corporation.ceo         = ceo
     corporation.cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
@@ -243,8 +245,10 @@ def updateCorporation(corporation):
 
 @task
 @locktask
-def updateAPIKey(apiKey):
-  print "ImportAPIKeyInfoTask : " + str(apiKey.id)
+def updateAPIKey(apiKey_id):
+  print "ImportAPIKeyInfoTask : " + str(apiKey_id)
+  
+  apiKey  = APIKey.objects.get(pk=apiKey_id)
 
   action  = "/account/APIKeyInfo.xml.aspx"
   params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode})
@@ -275,7 +279,7 @@ def updateAPIKey(apiKey):
         character, created = Character.objects.get_or_create(pk=xml_row.get("characterID"))
         
         if created:
-          updateCharacter.delay(character)
+          updateCharacter.delay(character.pk)
           
         #
         # If created we could start an character update job.
@@ -291,7 +295,7 @@ def updateAPIKey(apiKey):
         character, created = Character.objects.get_or_create(pk=xml_row.get("characterID"))
         
         if created:
-          updateCharacter.delay(character)
+          updateCharacter.delay(character.pk)
           
         #
         # If created we could start an character update job.
@@ -302,7 +306,7 @@ def updateAPIKey(apiKey):
         corporation, created = Corporation.objects.get_or_create(pk=xml_row.get("corporationID"))
         
         if created:
-          updateCorporation(corporation)
+          updateCorporation(corporation.pk)
         
         #
         # If created we could start an corporation update job.
@@ -326,17 +330,20 @@ def updateAPIKey(apiKey):
 
 @task
 @locktask
-def updateAssetList(object):
-
-    print "ImportAssetListTask : " + str(object.pk)
+def updateAssetList(object_id, type):
     
-    xml_root = None
+    print "ImportAssetListTask : " + str(object_id)
+    
+    object    = None
+    xml_root  = None
     
     #
     # Check if the object is a Character
     #
     
-    if type(object) == Character:
+    if type == Character:
+      
+      object = Character.objects.get(pk=object_id)
       
       #print object.characterName
       
@@ -359,6 +366,8 @@ def updateAssetList(object):
     #
       
     elif type(object) == Corporation:
+      
+      object = Corporation.objects.get(pk=object_id)
       
       #
       # Check if the object has a related APIKey
