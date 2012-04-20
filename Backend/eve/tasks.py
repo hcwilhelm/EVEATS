@@ -59,7 +59,7 @@ def locktask(function):
     if acquire_lock():
       try:
         print "Locked : " + lock_id
-        function(object, *args, **kwargs)
+        return function(object, *args, **kwargs)
     
       finally:
         release_lock()
