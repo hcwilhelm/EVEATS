@@ -38,10 +38,10 @@ urlpatterns = patterns('',
     url(r'^accounts/info/$', 'accounts.views.info'),
 
     # eve app
+    url(r'^eve/authentificationError/$', 'eve.views.authentificationError'),
     url(r'^eve/addAPIKey/$', 'eve.views.addAPIKey'),
     url(r'^eve/removeAPIKey/$', 'eve.views.removeAPIKey'),
     url(r'^eve/apiKeys/$', 'eve.views.apiKeys'),
-    url(r'^eve/apiKeyInfo/(?P<apiKeyID>\d+)/$', 'eve.views.apiKeyInfo'),
     url(r'^eve/characters/$', 'eve.views.characters'),
 
     # djcelery

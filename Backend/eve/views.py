@@ -12,10 +12,16 @@ from eve.tasks import *
 
 from django.contrib.auth.models import User
 from django.contrib import auth
+from django.contrib.auth.decorators import login_required
 
 from django.http import HttpResponse
 
-import simplejson as json
+from django.core.serializers.json import DjangoJSONEncoder
+from django.core import serializers
+from django.utils import simplejson
+
+from django.db.models.query import QuerySet
+from celery.task.sets import TaskSet
 
 
 # ==========================
@@ -29,7 +35,15 @@ import simplejson as json
 # to inform the Frontend that some long running work is in progress.
 #
 
+class HandleQuerySets(DjangoJSONEncoder):
+
+  def default(self, obj):
+    if type(obj) == QuerySet:
+      return serializers.serialize("python", obj, ensure_ascii=False)
+    return DjangoJSONEncoder.default(self, obj)
+  
 class JSONResponse:
+  
   def __init__(self, success=True, message=None, result=None, taskID=None):
     self.success = success
     self.message = message
@@ -37,91 +51,71 @@ class JSONResponse:
     self.taskID  = taskID
 
   def json(self):
-    return json.dumps({"success":self.succsess, "message":self.message, "result":self.result, "taskID":self.taskID})
+    return simplejson.dumps({"success":self.success, "message":self.message, "result":self.result, "taskID":self.taskID}, cls=HandleQuerySets)
+
+
+def authentificationError(request):
+  response = HttpResponse(mimetype="application/json")
+  
+  jsonResponse = JSONResponse(success=False, message="You are not logged in")
+  response.write(jsonResponse.json())
+
+  return response
 
 # ======================
 # = APIKey Operations  =
 # ======================
 
+@login_required(login_url="/eve/authentificationError")
 def addAPIKey(request):
   response = HttpResponse(mimetype="application/json")
 
-  if not request.user.is_authenticated():
-    jsonResponse = JSONResponse(success=False, message="You are not logged in")
-    response.write(jsonResponse.json())
+  keyID = request.POST["keyID"]
+  vCode = request.POST["vCode"]
+  name  = request.POST["name"]
+  user  = request.user
+  
+  apiKey = APIKey(keyID=keyID, vCode=vCode, name=name, user=user)
+  apiKey.save()
+  
+  updateAPIKey.delay(apiKey.pk)
+  
+  jsonResponse = JSONResponse()
+  response.write(jsonResponse.json())
 
-    return response
+  return response
 
-  if request.user.is_authenticated():
-    result = AddAPIKeyTask.delay(request.user.id, request.POST["name"], request.POST["keyID"], request.POST["vCode"])
-
-    jsonResponse = JSONResponse(success=True, taskID=result.task_id)
-    response.write(jsonResponse.json())
-
-    return response
-
+@login_required(login_url="/eve/authentificationError")
 def removeAPIKey(request):
   response = HttpResponse(mimetype="application/json")
 
-  if not request.user.is_authenticated():
-    jsonResponse = JSONResponse(success=False, message="You are not logged in")
-    response.write(jsonResponse.json())
+  keyID = response.POST["keyID"]
+  APIKey.objects.filter(pk=keyID).delete()
+  
+  jsonResponse = JSONResponse(success=True)
+  response.write(jsonResponse.json())
 
-    return response
+  return response
 
-  if request.user.is_authenticated():
-    result = RemoveAPIKeyTask.delay(request.user.id, request.POST["keyID"])
-
-    jsonResponse = JSONResponse(success=True, taskID=result.task_id)
-    response.write(jsonResponse.json())
-
-    return response
-
-
-def listAPIKey(request):
+@login_required(login_url="/eve/authentificationError")
+def apiKeys(request):
   response = HttpResponse(mimetype="application/json")
 
-  if not request.user.is_authenticated():
-    jsonResponse = JSONResponse(success=False, message="You are not logged in")
-    response.write(jsonResponse.json())
-
-    return response
-
-  if request.user.is_authenticated():
-    result = ListAPIKeyTask.delay(request.user.id)
-
-    jsonResponse = JSONResponse(success=True, taskID=result.task_id)
-    response.write(jsonResponse.json())
-
-    return response
-
-# ==================
-# = Get APIKeyInfo =
-# ==================
-
-def apiKeyInfo(request, apiKeyID):
-  response = HttpResponse(mimetype="application/json")
-  serializer = serializers.get_serializer("json")()
-
-  if request.user.is_authenticated():
-    apiKey = APIKey.objects.get(pk=apiKeyID)
-
-    if apiKey.apiKeyInfo == None:
-      taskResult = UpdateAPIKeyInfoTask.delay(apiKey.id)
-      taskResult.get()
-
-    elif apiKey.apiKeyInfo.expired()
-      taskResult = UpdateAPIKeyInfoTask.delay(apiKey.id)
-      taskResult.get()
-
-    if apiKey.valid:
-      serializer.serialize([apiKey.apiKeyInfo], stream=response)
-
-    else:
-      response.write(simplejson.dumps({'success':False, 'message':"APIKey is not Valid"}))
-
-  else:
-    response.write(simplejson.dumps({'success':False, 'message':"You are not loged in"}))
-
+  keys  = request.user.apikey_set.all()
+  tasks = []
+  
+  for key in keys:
+    if key.expired():
+      tasks.append(updateAPIKey.subtask([key.pk]))
+      
+  job     = TaskSet(tasks=tasks)
+  result  = job.apply_async()
+  
+  print result.join()
+  
+  keys  = request.user.apikey_set.all()
+  jsonResponse = JSONResponse(success=True, result=keys)
+  
+  response.write(jsonResponse.json())
   return response
 
