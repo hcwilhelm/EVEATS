@@ -43,6 +43,7 @@ urlpatterns = patterns('',
     url(r'^eve/removeAPIKey/$', 'eve.views.removeAPIKey'),
     url(r'^eve/apiKeys/$', 'eve.views.apiKeys'),
     url(r'^eve/characters/$', 'eve.views.characters'),
+    url(r'^eve/corporations/$', 'eve.views.corporations'),
 
     # djcelery
     url(r'^tasks/', include('djcelery.urls')),

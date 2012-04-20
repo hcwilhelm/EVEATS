@@ -23,6 +23,7 @@ from django.utils import simplejson
 from django.db.models.query import QuerySet
 from celery.task.sets import TaskSet
 
+from itertools import chain
 
 # ==========================
 # = Common Response Class  =
@@ -118,4 +119,74 @@ def apiKeys(request):
   
   response.write(jsonResponse.json())
   return response
+
+# ======================================
+# = Character / Corporation operations =
+# ======================================
+
+
+#
+# Returns all Characters associated to your APIKey's
+#
+
+@login_required(login_url="/eve/authentificationError")
+def characters(request):
+  response = HttpResponse(mimetype="application/json")
+  
+  tasks = []
+  
+  for key in request.user.apikey_set.all():
+    for char in key.character_set.all():
+      if char.expired():
+        tasks.append(updateCharacter.subtask([char.pk]))
+  
+  job = TaskSet(tasks=tasks)
+  result = job.apply_async()
+  
+  print result.join()
+  
+  chars = Character.objects.none()
+  
+  for key in request.user.apikey_set.all():
+    chars = chars | key.character_set.all()
+  
+  jsonResponse = JSONResponse(success=True, result=chars)
+  
+  response.write(jsonResponse.json())
+  return response
+
+#
+# Returns all Corporations associated to your APIKey's
+#
+
+@login_required(login_url="/eve/authentificationError")
+def corporations(request):
+  response = HttpResponse(mimetype="application/json")
+  
+  tasks = []
+  
+  for key in request.user.apikey_set.all():
+    for corp in key.corporation_set.all():
+      if corp.expired():
+        tasks.append(updateCorporation.subtask([corp.pk]))
+  
+  job = TaskSet(tasks=tasks)
+  result = job.apply_async()
+  
+  print result.join()
+  
+  corps = Corporation.objects.none()
+  
+  for key in request.user.apikey_set.all():
+    corps = corps | key.corporation_set.all()
+  
+  jsonResponse = JSONResponse(success=True, result=corps)
+
+  response.write(jsonResponse.json())
+  return response
+
+  
+# ================
+# = Query Assets =
+# ================
 
