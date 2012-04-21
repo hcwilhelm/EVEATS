@@ -13,6 +13,7 @@ from eve.tasks import *
 from django.contrib.auth.models import User
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import permission_required 
 
 from django.http import HttpResponse
 
@@ -187,5 +188,15 @@ def corporations(request):
 # ================
 # = Query Assets =
 # ================
+
+from permission.decorators import function_decorators
+
+#@function_decorators.permission_required('character.view_asset', login_url="/eve/authentificationEr") 
+def characterAssets(request):
+  
+  print request.user.has_perm(Character.objects.all()[0])
+  
+  response = HttpResponse(mimetype="application/json")
+  return response
 
 

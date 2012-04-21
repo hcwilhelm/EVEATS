@@ -61,6 +61,11 @@ class Character(models.Model):
   def expired(self):
     return self.cachedUntil < datetime.datetime.utcnow()
 
+  class Meta:
+    permissions = (
+      ("viewAssetList_character", "Can see available assetList"),
+    )
+
 class CharacterEmploymentHistory(TimeStampedModel):
   character         = models.ForeignKey('Character')
   corporation       = models.ForeignKey('Corporation')

@@ -154,6 +154,12 @@ MIDDLEWARE_CLASSES = (
     #'django.middleware.cache.FetchFromCacheMiddleware',
 )
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'permission.backends.RoleBackend',
+    'permission.backends.PermissionBackend',
+)
+
 ROOT_URLCONF = 'Backend.urls'
 
 TEMPLATE_DIRS = (

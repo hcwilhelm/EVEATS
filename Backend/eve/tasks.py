@@ -345,8 +345,6 @@ def updateAssetList(object_id, type):
       
       object = Character.objects.get(pk=object_id)
       
-      #print object.characterName
-      
       #
       # Check if the object has a related APIKey
       #
@@ -365,7 +363,7 @@ def updateAssetList(object_id, type):
     # Check if the object is a Corporation
     #
       
-    elif type(object) == Corporation:
+    elif type == Corporation:
       
       object = Corporation.objects.get(pk=object_id)
       
@@ -400,7 +398,7 @@ def updateAssetList(object_id, type):
     #
     # Error Handling 
     #
-
+    
     if xml_root.find("error") != None:
       print xml_root.find("error").text
       return False
