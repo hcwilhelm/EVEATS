@@ -177,6 +177,10 @@ class staStations(models.Model):
   stationTypeID = models.ForeignKey('staStationTypes')
   solarSystemID = models.IntegerField('mapSolarSystems')
   corporationID = models.ForeignKey('eve.Corporation')
+  cachedUntil = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+
+  def expired(self):
+    return False
 
   class Meta:
     db_table = "staStations"
@@ -190,14 +194,9 @@ class staStations(models.Model):
 # ===================
 
 class staStationTypes(models.Model):
-  stationID = models.PositiveIntegerField(primary_key=True)
-  stationName = models.CharField(max_length=100)
-  stationTypeID = models.ForeignKey('staStationTypes')
-  solarSystemID = models.IntegerField('mapSolarSystems')
-  corporationID = models.ForeignKey('eve.Corporation')
-  cachedUntil   = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+  stationTypeID = models.IntegerField(primary_key=True) # Field name made lowercase.
 
-  class Meta:
+class Meta:
     db_table = u'staStationTypes'
     managed = False
 
