@@ -47,6 +47,11 @@ class Corporation(models.Model):
   def expired(self):
     return self.cachedUntil < datetime.datetime.utcnow()
 
+  class Meta:
+    permissions = (
+      ("viewAssetList_corporation", "Can see available assetList"),
+    )
+    
 class Character(models.Model):
   characterID       = models.IntegerField(primary_key=True)
   characterName     = models.CharField(max_length=255, null=True)

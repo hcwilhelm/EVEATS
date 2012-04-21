@@ -189,14 +189,46 @@ def corporations(request):
 # = Query Assets =
 # ================
 
-from permission.decorators import function_decorators
-
-#@function_decorators.permission_required('character.view_asset', login_url="/eve/authentificationEr") 
-def characterAssets(request):
-  
-  print request.user.has_perm(Character.objects.all()[0])
-  
+@login_required(login_url="/eve/authentificationError")
+def characterAssets(request, ID):
   response = HttpResponse(mimetype="application/json")
+  
+  char = None
+  
+  try: 
+    char = Character.objects.get(pk=ID)
+  
+  except Exception, e:
+    jsonResponse = JSONResponse(success=False, message=str(e))
+    response.write(jsonResponse.json())
+    return response
+    
+  taskResult = None
+  
+  if request.user.has_perm('eve.viewAssetList_character', char):
+    if char.assetList == None:
+     taskResult = updateAssetList.delay(char.pk, Character)
+     
+    elif char.assetList.expired():
+      taskResult = updateAssetList.delay(char.pk, Character)
+  
+    if taskResult != None:
+      if taskResult.get():
+        char = Character.objects.get(pk=ID)
+        assets = char.assetList.asset_set.all()
+        jsonResponse = JSONResponse(success=True, result=assets)
+        response.write(jsonResponse.json())
+        
+      else:
+        jsonResponse = JSONResponse(success=False, message="Assets import Error")
+        response.write(jsonResponse.json())
+    
+    else:
+      assets = char.assetList.asset_set.all()
+      jsonResponse = JSONResponse(success=True, result=assets)
+      response.write(jsonResponse.json())
+
+
   return response
 
 
