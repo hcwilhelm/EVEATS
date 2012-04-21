@@ -51,7 +51,7 @@ class Corporation(models.Model):
     permissions = (
       ("viewAssetList_corporation", "Can see available assetList"),
     )
-    
+
 class Character(models.Model):
   characterID       = models.IntegerField(primary_key=True)
   characterName     = models.CharField(max_length=255, null=True)
@@ -98,6 +98,10 @@ class ConquerableStation(models.Model):
   stationTypeID     = models.ForeignKey('evedb.staStationTypes')
   solarSystemID     = models.IntegerField('evedb.mapSolarSystems')
   corporationID     = models.ForeignKey('Corporation')
+  cachedUntil       = models.DateTimeField()
+
+  def expired(self):
+    return self.cachedUntil < datetime.datetime.utcnow()
 
 # =============================================================================================
 # = /char/AssetList.xml.aspx                                                                  =

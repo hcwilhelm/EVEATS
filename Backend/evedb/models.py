@@ -7,6 +7,7 @@
 #
 
 from django.db import models
+import datetime
 
 # ============
 # = invTypes =
@@ -194,6 +195,7 @@ class staStationTypes(models.Model):
   stationTypeID = models.ForeignKey('staStationTypes')
   solarSystemID = models.IntegerField('mapSolarSystems')
   corporationID = models.ForeignKey('eve.Corporation')
+  cachedUntil   = datetime.datetime.utcnow() + datetime.timedelta(days=1)
 
   class Meta:
     db_table = u'staStationTypes'
