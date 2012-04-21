@@ -1,14 +1,12 @@
-# 
+#
 #  models.py
 #  EVEATS
-#  
+#
 #  Created by Hans Christian Wilhelm on 2011-09-05.
 #  Copyright 2011 scienceondope.org All rights reserved.
-# 
-
+#
 
 from django.db import models
-
 
 # ============
 # = invTypes =
@@ -121,7 +119,7 @@ class invCategories(models.Model):
 
     def __unicode__(self):
         return unicode(self.categoryID)
-        
+
 
 # ==================
 # = mapDenormalize =
@@ -167,3 +165,53 @@ class invFlags(models.Model):
 
     def __unicode__(self):
         return unicode(self.flagID)
+
+# ===============
+# = staStations =
+# ===============
+
+class staStations(models.Model):
+  stationID     = models.PositiveIntegerField(primary_key=True)
+  stationName   = models.CharField(max_length=100)
+  stationTypeID = models.ForeignKey('staStationTypes')
+  solarSystemID = models.IntegerField('mapSolarSystems')
+  corporationID = models.ForeignKey('eve.Corporation')
+
+  class Meta:
+    db_table = "staStations"
+    managed = False
+
+  def __unicode__(self):
+    return unicode(self.stationID)
+
+# ===================
+# = staStationTypes =
+# ===================
+
+class staStationTypes(models.Model):
+  stationID = models.PositiveIntegerField(primary_key=True)
+  stationName = models.CharField(max_length=100)
+  stationTypeID = models.ForeignKey('staStationTypes')
+  solarSystemID = models.IntegerField('mapSolarSystems')
+  corporationID = models.ForeignKey('eve.Corporation')
+
+  class Meta:
+    db_table = u'staStationTypes'
+    managed = False
+
+  def __unicode__(self):
+    return unicode(self.stationID)
+
+class mapSolarSystems(models.Model):
+  solarSystemID = models.IntegerField(primary_key=True)
+
+  class Meta:
+    db_table = u'mapSolarSystems'
+    managed = False
+
+class mapRegions(models.Model):
+  regionID = models.IntegerField(primary_key=True)
+
+  class Meta:
+    db_table = u'mapRegions'
+    managed = False

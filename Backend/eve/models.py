@@ -7,6 +7,7 @@
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from django.contrib.auth.models import User
+from django.contrib.contenttypes import generic
 import datetime
 import logging
 logger = logging.getLogger(__name__)
@@ -82,6 +83,16 @@ class AssetList(TimeStampedModel):
 
   def expired(self):
      return self.cachedUntil < datetime.datetime.utcnow()
+
+class Station(models.Model):
+  stationInfo       = generic.GenericForeignKey('ConquerableStation', 'evedb.staStation')
+
+class ConquerableStation(models.Model):
+  stationID         = models.PositiveIntegerField(primary_key=True)
+  stationName       = models.CharField(max_length=100)
+  stationTypeID     = models.ForeignKey('evedb.staStationTypes')
+  solarSystemID     = models.IntegerField('evedb.mapSolarSystems')
+  corporationID     = models.ForeignKey('Corporation')
 
 # =============================================================================================
 # = /char/AssetList.xml.aspx                                                                  =
