@@ -84,16 +84,18 @@ def updateConquerableStations(self):
       updateCorporation.delay(corporation.pk)
     
     station, created = ConquerableStation.objects.get_or_create(
-      stationID=stationID, 
-      stationName=stationName,
-      stationTypeID_id=stationTypeID,
-      solarSystemID_id=solarSystemID,
-      corporationID=corporationID,
-      cachedUntil=cachedUntil
+      stationID       = stationID, 
+      stationName     = stationName,
+      stationType_id  = stationTypeID,
+      solarSystem_id  = solarSystemID,
+      corporation     = corporationID,
+      cachedUntil     = cachedUntil
     )
 
     if not created:
       station.cachedUntil = cachedUntil
+      station.corporation = corporation 
+      station.save()
     
   for station in ConquerableStation.objects.all()
     if station.expired();

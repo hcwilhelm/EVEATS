@@ -125,9 +125,9 @@ class Station(models.Model):
 class ConquerableStation(models.Model):
   stationID         = models.PositiveIntegerField(primary_key=True)
   stationName       = models.CharField(max_length=256)
-  stationTypeID     = models.ForeignKey('evedb.staStationTypes')
-  solarSystemID     = models.ForeignKey('evedb.mapSolarSystems')
-  corporationID     = models.ForeignKey('Corporation')
+  stationType       = models.ForeignKey('evedb.staStationTypes')
+  solarSystem       = models.ForeignKey('evedb.mapSolarSystems')
+  corporation       = models.ForeignKey('Corporation')
   cachedUntil       = models.DateTimeField(default=datetime.datetime.utcnow(), blank=True)
 
   def __unicode__(self):
