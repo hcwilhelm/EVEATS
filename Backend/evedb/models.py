@@ -174,9 +174,9 @@ class invFlags(models.Model):
 class staStations(models.Model):
   stationID     = models.PositiveIntegerField(primary_key=True)
   stationName   = models.CharField(max_length=100)
-  stationTypeID = models.ForeignKey('staStationTypes')
+  stationTypeID = models.ForeignKey('staStationTypes', db_column='stationTypeID')
   solarSystemID = models.IntegerField('mapSolarSystems')
-  corporationID = models.ForeignKey('eve.Corporation')
+  corporationID = models.ForeignKey('eve.Corporation', db_column='corporationID')
   cachedUntil = datetime.datetime.utcnow() + datetime.timedelta(days=1)
 
   def expired(self):
