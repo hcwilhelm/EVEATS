@@ -15,7 +15,6 @@ from celery.task import task
 # = Import general python modules                                           =
 # ===========================================================================
 from lxml import etree
-import httplib
 import urllib
 from common.tasks import locktask
 
