@@ -47,53 +47,51 @@ class UpdateAllCharacters(Task):
 
 @task
 def updateConquerableStations():
-  print "updateConquerableStations"
-  
+  logger = updateConquerableStations.get_logger()
+  logger.info("Updateing all onquerable stations!")
+
   action  = "/eve/ConquerableStationList.xml.aspx"
   xml     = getXMLFromEveAPI(action=action, params=None)
-  
-  #print etree.tostring(xml)
 
   # ===================
   # = Error handling  =
   # ===================
-  
+
   error = xml.find("error")
-  
+
   if error is not None:
     errorCode     = error.get('code')
     errorMessage  = error.text
-    
+
     logger.warning("Error fetching ConquerableStationList from API: errorCode: '%s' errorMessage '%s'" % (errorCode, errorMessage))
-    
+
     return False
 
   # ============
   # = No Error =
   # ============
-  
+
   cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
-  
-  print "all fine"
-  
-  for outpost in xml.findall("result/rowset[@name='outposts']/row"):
-    
-    print "outpost"
-    
+
+  allOutposts = xml.findall("result/rowset[@name='outposts']/row")
+  logger.info("Fetched %s conquerable stations from EVE API" % len(allOutposts))
+
+  for outpost in allOutposts:
     stationID         = outpost.get('stationID')
     stationName       = outpost.get('stationName')
     stationTypeID     = outpost.get('stationTypeID')
     solarSystemID     = outpost.get('solarSystemID')
     corporationID     = outpost.get('stationID')
-    
+
+    logger.debug("Processing station '%s' with ID '%s'" % (stationName, stationID))
+
     corporation, corpCreated = Corporation.objects.get_or_create(pk=corporationID)
 
     if corpCreated:
-      print "updateCorp"
       updateCorporation.delay(corporation.pk)
-    
+
     station, created = ConquerableStation.objects.get_or_create(
-      stationID       = stationID, 
+      stationID       = stationID,
       stationName     = stationName,
       stationType_id  = stationTypeID,
       solarSystem_id  = solarSystemID,
@@ -103,16 +101,16 @@ def updateConquerableStations():
 
     if not created:
       station.cachedUntil = cachedUntil
-      station.corporation = corporation 
+      station.corporation = corporation
       station.save()
-    
+
   for station in ConquerableStation.objects.all():
     if station.expired():
       station.delete()
       logger.info("Deleting '%s' outdated conquerable Stations" % station.pk)
 
   return True
-  
+
 # ============================================================================
 # = task updateCharacter                                                     =
 # ============================================================================
@@ -198,7 +196,7 @@ def updateCharacter(character_id):
 def updateCorporation(corporation_id):
   logger.debug("running updateCorporation for corporationId %s" % corporation_id)
   print "updateCorporation : " + str(corporation_id)
-  
+
   corporation = Corporation.objects.get(pk=corporation_id)
 
   action = "/corp/CorporationSheet.xml.aspx"
@@ -208,14 +206,14 @@ def updateCorporation(corporation_id):
   # ===================
   # = Error Handling  =
   # ===================
-  
+
   error = xml.find("error")
 
   if xml.find("error") is not None:
-    
+
     errorCode     = error.get('code')
     errorMessage  = error.text
-    
+
     print "updateCorporation xml error"
     return False
 
@@ -224,9 +222,9 @@ def updateCorporation(corporation_id):
   # =============
 
   else:
-    
+
     print "updateCorporation xml ok"
-    
+
     corporation.corporationName = xml.find("result/corporationName").text
     corporation.description     = xml.find("result/description").text
 
@@ -241,9 +239,9 @@ def updateCorporation(corporation_id):
       #
       # NPC characterID's can be identified via the static data dump !
       #
-      
+
       print "create ceo"
-      
+
       logger.info("Created character with id %s" % ceo.characterID)
       updateCharacter.delay(ceo.pk)
 
