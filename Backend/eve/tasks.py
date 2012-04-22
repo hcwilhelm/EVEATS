@@ -44,45 +44,64 @@ class UpdateAllCharacters(Task):
 # ===================================
 # = Update Conquerable Stations     =
 # ===================================
-class UpdateConquerableStationList(Task):
-  def run(self):
-    action = "/eve/ConquerableStationList.xml.aspx"
-    xml = getXMLFromEveAPI(action=action, params=None)
 
-    # ===================
-    # = Error handling  =
-    # ===================
-    error = xml.find("error")
-    if error is not None:
-      errorCode = error.get('code')
-      errorMessage = error.text
-      logger.warning("Error fetching ConquerableStationList from API: errorCode: '%s' errorMessage '%s'" % (
-        errorCode, errorMessage))
-      return False
+@task
+def updateConquerableStations(self):
+  action  = "/eve/ConquerableStationList.xml.aspx"
+  xml     = getXMLFromEveAPI(action=action, params=None)
 
-    cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
-    for outpost in xml.findall("result/rowset[@name='outposts']/row"):
-      station, created = ConquerableStation.objects.get_or_create(stationID=outpost.get('stationID'))
+  # ===================
+  # = Error handling  =
+  # ===================
+  
+  error = xml.find("error")
+  
+  if error is not None:
+    errorCode     = error.get('code')
+    errorMessage  = error.text
+    
+    logger.warning("Error fetching ConquerableStationList from API: errorCode: '%s' errorMessage '%s'" % (errorCode, errorMessage))
+    
+    return False
 
-      station.stationName = outpost.get('stationName')
-      station.stationTypeID = staStationTypes.objects.get(stationTypeID=outpost.get('stationTypeID'))
-      station.solarSystemID = mapSolarSystems.objects.get(solarSystemID=outpost.get('solarSystemID'))
+  # ============
+  # = No Error =
+  # ============
+  
+  cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
+  
+  for outpost in xml.findall("result/rowset[@name='outposts']/row"):
+    
+    stationID         = outpost.get('stationID')
+    stationName       = outpost.get('stationName')
+    stationTypeID     = outpost.get('stationTypeID')
+    solarSystemID     = outpost.get('solarSystemID')
+    corporationID     = outpost.get('stationID')
+    
+    corporation, corpCreated = Corporation.objects.get_or_create(pk=corporationID)
 
-      corporation, corpCreated = Corporation.objects.get_or_create(corporationID=outpost.get('corporationID'))
+    if corpCreated:
+      updateCorporation.delay(corporation.pk)
+    
+    station, created = ConquerableStation.objects.get_or_create(
+      stationID=stationID, 
+      stationName=stationName,
+      stationTypeID=stationTypeID,
+      solarSystemID=solarSystemID,
+      corporationID=corporationID,
+      cachedUntil=cachedUntil
+    )
 
-      if corpCreated:
-        updateCorporation.delay(corporation.pk)
-
-      station.corporationID = corporation
+    if not created:
       station.cachedUntil = cachedUntil
+    
+  for station in ConquerableStation.objects.all()
+    if station.expired();
+      station.delete()
+      logger.info("Deleting '%s' outdated conquerable Stations" % station.pk)
 
-      station.save()
-
-    toDelete = ConquerableStation.objects.get(cachedUntil < cachedUntil)
-    logger.info("Deleting '%s' outdated conquerable Stations" % toDelete.count())
-    toDelete.delete()
-
-    return True
+  return True
+  
 # ============================================================================
 # = task updateCharacter                                                     =
 # ============================================================================
