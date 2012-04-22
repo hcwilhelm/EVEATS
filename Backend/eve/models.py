@@ -96,8 +96,8 @@ class ConquerableStation(models.Model):
   stationID         = models.PositiveIntegerField(primary_key=True)
   stationName       = models.CharField(max_length=100, null=True)
   stationTypeID     = models.ForeignKey('evedb.staStationTypes', null=True)
-  solarSystemID     = models.IntegerField('evedb.mapSolarSystems', null=True)
-  corporationID     = models.ForeignKey('Corporation', null=True)
+  solarSystemID     = models.ForeignKey('evedb.mapSolarSystems', db_column="solarSystemID", null=True)
+  corporationID     = models.ForeignKey('Corporation', null=True, on_delete=models.SET_NULL)
   cachedUntil       = models.DateTimeField(default=datetime.datetime.utcnow(), blank=True)
 
   def expired(self):
