@@ -86,8 +86,8 @@ def updateConquerableStations(self):
     station, created = ConquerableStation.objects.get_or_create(
       stationID=stationID, 
       stationName=stationName,
-      stationTypeID=stationTypeID,
-      solarSystemID=solarSystemID,
+      stationTypeID_id=stationTypeID,
+      solarSystemID_id=solarSystemID,
       corporationID=corporationID,
       cachedUntil=cachedUntil
     )
