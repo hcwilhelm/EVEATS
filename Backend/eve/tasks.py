@@ -3,7 +3,7 @@
 # ===========================================================================
 from eve.models import *
 from evedb.models import *
-from common.tasks import getXMLFromEveAPI
+from helper import getXMLFromEveAPI
 
 # ===========================================================================
 # = Import celery modules                                                   =
