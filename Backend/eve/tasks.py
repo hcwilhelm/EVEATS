@@ -95,8 +95,7 @@ def updateConquerableStations():
       stationName     = stationName,
       stationType_id  = stationTypeID,
       solarSystem_id  = solarSystemID,
-      corporation     = corporation,
-      cachedUntil     = cachedUntil
+      corporation     = corporation
     )
 
     if not created:
