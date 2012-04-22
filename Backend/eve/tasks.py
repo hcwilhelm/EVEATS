@@ -71,8 +71,7 @@ class UpdateConquerableStationList(Task):
       corporation, corpCreated = Corporation.objects.get_or_create(corporationID=outpost.get('corporationID'))
 
       if corpCreated:
-        corporation.save()
-        updateCorporation(corporation.pk)
+        updateCorporation.delay(corporation.pk)
 
       station.corporationID = corporation
       station.cachedUntil = cachedUntil
