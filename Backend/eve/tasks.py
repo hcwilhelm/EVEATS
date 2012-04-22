@@ -1,13 +1,9 @@
 # ===========================================================================
-# = Import Models                                                           =
+# = Import Models and helper                                                =
 # ===========================================================================
 from eve.models import *
 from evedb.models import *
-
-# ===========================================================================
-# = Import django modules                                                   =
-# ===========================================================================
-from django.conf import settings
+from common.tasks import getXMLFromEveAPI
 
 # ===========================================================================
 # = Import celery modules                                                   =
@@ -28,20 +24,6 @@ from common.tasks import locktask
 # ===========================================================================
 import logging
 logger = logging.getLogger(__name__)
-
-# =============================================================================
-# = Helper functions                                                          =
-# =============================================================================
-
-def getXMLFromAPI(action, params):
-    header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-
-    connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
-    connection.request("GET", action, params, header)
-
-    xml = connection.getresponse().read()
-    connection.close()
-    return etree.fromstring(xml)
 
 # ===================================
 # = Update Character from EVE API   =
@@ -66,7 +48,7 @@ class UpdateAllCharacters(Task):
 class UpdateConquerableStationList(Task):
   def run(self):
     action = "/eve/ConquerableStationList.xml.aspx"
-    xml = getXMLFromAPI(action=action, params=None)
+    xml = getXMLFromEveAPI(action=action, params=None)
 
     # ===================
     # = Error handling  =
@@ -116,7 +98,7 @@ def updateCharacter(character_id):
 
   action = "/eve/CharacterInfo.xml.aspx"
   params = urllib.urlencode({'characterID':character.characterID})
-  xml = getXMLFromAPI(action=action, params=params)
+  xml = getXMLFromEveAPI(action=action, params=params)
 
   error = xml.find("error")
 
@@ -192,7 +174,7 @@ def updateCorporation(corporation_id):
 
   action = "/corp/CorporationSheet.xml.aspx"
   params = urllib.urlencode({'corporationID':corporation.corporationID})
-  xml = getXMLFromAPI(action=action, params=params)
+  xml = getXMLFromEveAPI(action=action, params=params)
 
   # ===================
   # = Error Handling  =
@@ -253,7 +235,7 @@ def updateAPIKey(apiKey_id):
 
   action  = "/account/APIKeyInfo.xml.aspx"
   params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode})
-  xml     = getXMLFromAPI(action, params)
+  xml     = getXMLFromEveAPI(action, params)
 
   if xml.find("error") != None:
     apiKey.valid        = False
@@ -358,7 +340,7 @@ def updateAssetList(object_id, type):
       action  = "/char/AssetList.xml.aspx"
       params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode, 'characterID':char.characterID})
 
-      xml_root     = getXMLFromAPI(action, params)
+      xml_root     = getXMLFromEveAPI(action, params)
 
     #
     # Check if the object is a Corporation
@@ -380,7 +362,7 @@ def updateAssetList(object_id, type):
       action  = "/corp/AssetList.xml.aspx"
       params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode, 'characterID':char.characterID})
 
-      xml_root     = getXMLFromAPI(action, params)
+      xml_root     = getXMLFromEveAPI(action, params)
 
     #
     # Do nothing for all other object types
