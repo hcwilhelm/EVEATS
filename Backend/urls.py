@@ -38,13 +38,15 @@ urlpatterns = patterns('',
     url(r'^accounts/info/$', 'accounts.views.info'),
 
     # eve app
-    url(r'^eve/authentificationError/$', 'eve.views.authentificationError'),
     url(r'^eve/addAPIKey/$', 'eve.views.addAPIKey'),
     url(r'^eve/removeAPIKey/$', 'eve.views.removeAPIKey'),
     url(r'^eve/apiKeys/$', 'eve.views.apiKeys'),
     url(r'^eve/characters/$', 'eve.views.characters'),
     url(r'^eve/corporations/$', 'eve.views.corporations'),
     url(r'^eve/characterAssets/(?P<ID>\d+)/$', 'eve.views.characterAssets'),
+
+    # common app
+    url(r'^common/authentificationError/$', 'common.views.authentificationError'),
 
     # djcelery
     url(r'^tasks/', include('djcelery.urls')),
