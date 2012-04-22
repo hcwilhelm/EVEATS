@@ -5,9 +5,17 @@
 #  Copyright 2011 scienceondope.org All rights reserved.
 
 from django.db import models
+
 from django_extensions.db.models import TimeStampedModel
 from django.contrib.auth.models import User
+
 from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.models import ContentType
+
+from django.core.exceptions import ValidationError
+
+from evedb.models import *
+
 import datetime
 import logging
 logger = logging.getLogger(__name__)
@@ -89,17 +97,42 @@ class AssetList(TimeStampedModel):
   def expired(self):
      return self.cachedUntil < datetime.datetime.utcnow()
 
+
+#
+# Polymorpic Station model to represent ether a ConquerableStation or a NPC Station.
+# Allowed Types are ConquerableStation and evedb.staStations
+#
+
+def validate_station_type(obj):
+  if ContentType.objects.get(pk=obj).model_class() != ConquerableStation or ContentType.objects.get(pk=obj) != staStations:
+    raise ValidationError("We only link ConquerableStation and evedb.staStations here !")
+
+
+#
+# When you create a Station call stationObj.full_clean()
+# to validate the content_type !
+#
+
 class Station(models.Model):
-  stationInfo       = generic.GenericForeignKey('ConquerableStation', 'evedb.staStation')
+  content_type      = models.ForeignKey(ContentType, validators=[validate_station_type])
+  object_id         = models.PositiveIntegerField()
+  concreteStation   = generic.GenericForeignKey('content_type', 'object_id')
+  
+  def __unicode__(self):
+    return str(self.concreteStation.pk)
+  
 
 class ConquerableStation(models.Model):
   stationID         = models.PositiveIntegerField(primary_key=True)
-  stationName       = models.CharField(max_length=100, null=True)
-  stationTypeID     = models.ForeignKey('evedb.staStationTypes', null=True)
-  solarSystemID     = models.ForeignKey('evedb.mapSolarSystems', db_column="solarSystemID", null=True)
-  corporationID     = models.ForeignKey('Corporation', null=True, on_delete=models.SET_NULL)
+  stationName       = models.CharField(max_length=256)
+  stationTypeID     = models.ForeignKey('evedb.staStationTypes')
+  solarSystemID     = models.ForeignKey('evedb.mapSolarSystems')
+  corporationID     = models.ForeignKey('Corporation')
   cachedUntil       = models.DateTimeField(default=datetime.datetime.utcnow(), blank=True)
 
+  def __unicode__(self):
+    return self.concreteStation.stationName
+    
   def expired(self):
     return self.cachedUntil < datetime.datetime.utcnow()
 
