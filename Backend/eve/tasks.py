@@ -84,7 +84,7 @@ def updateConquerableStations():
     stationName       = outpost.get('stationName')
     stationTypeID     = outpost.get('stationTypeID')
     solarSystemID     = outpost.get('solarSystemID')
-    corporationID     = outpost.get('stationID')
+    corporationID     = outpost.get('corporationID')
     
     corporation, corpCreated = Corporation.objects.get_or_create(pk=corporationID)
 
@@ -211,12 +211,12 @@ def updateCorporation(corporation_id):
   
   error = xml.find("error")
 
-  if xml.find("error") is not None:
+  if error is not None:
     
     errorCode     = error.get('code')
     errorMessage  = error.text
     
-    print "updateCorporation xml error"
+    print "updateCorporation xml error : " + str(errorCode) + " : " + errorMessage
     return False
 
   # =============
