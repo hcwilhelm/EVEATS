@@ -1,74 +1,33 @@
-#
-#  tasks.py
-#  Backend
-#
-#  Created by Hans Christian Wilhelm on 2012-02-15.
-#  Copyright 2012 scienceondope.org All rights reserved.
-#
-
 # ===========================================================================
 # = Import Models                                                           =
 # ===========================================================================
-
 from eve.models import *
 from evedb.models import *
 
 # ===========================================================================
 # = Import django modules                                                   =
 # ===========================================================================
-
 from django.conf import settings
-from django.contrib.auth.models import User
-from django.core.cache import cache
 
 # ===========================================================================
 # = Import celery modules                                                   =
 # ===========================================================================
-
 from celery.task import Task
 from celery.task import task
 
 # ===========================================================================
 # = Import general python modules                                           =
 # ===========================================================================
-
 from lxml import etree
-from functools import wraps
 import httplib
 import urllib
-import datetime
-from decimal import *
+from common.tasks import locktask
+
+# ===========================================================================
+# = Logging                                                                 =
+# ===========================================================================
 import logging
-
 logger = logging.getLogger(__name__)
-
-
-# ===========================================================================
-# = Decorator to allow only one update task for each object at time         =
-# ===========================================================================
-
-LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
-
-def locktask(function):
-
-  @wraps(function)
-  def wrapper(object, *args, **kwargs):
-    lock_id = function.__name__ + "-" + str(object)
-    acquire_lock = lambda: cache.add(lock_id, "true", LOCK_EXPIRE)
-    release_lock = lambda: cache.delete(lock_id)
-
-    if acquire_lock():
-      try:
-        logger.debug("Locked task: %s" % lock_id)
-        return function(object, *args, **kwargs)
-      except Exception as ex:
-        # todo write more details to a file
-        logger.error("Exception in Task: %s" % ex)
-      finally:
-        release_lock()
-        logger.debug("Unlocked task: %s" % lock_id)
-
-  return wrapper
 
 # =============================================================================
 # = Helper functions                                                          =
