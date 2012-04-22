@@ -46,9 +46,13 @@ class UpdateAllCharacters(Task):
 # ===================================
 
 @task
-def updateConquerableStations(self):
+def updateConquerableStations():
+  print "updateConquerableStations"
+  
   action  = "/eve/ConquerableStationList.xml.aspx"
   xml     = getXMLFromEveAPI(action=action, params=None)
+  
+  #print etree.tostring(xml)
 
   # ===================
   # = Error handling  =
@@ -70,7 +74,11 @@ def updateConquerableStations(self):
   
   cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
   
+  print "all fine"
+  
   for outpost in xml.findall("result/rowset[@name='outposts']/row"):
+    
+    print "outpost"
     
     stationID         = outpost.get('stationID')
     stationName       = outpost.get('stationName')
@@ -81,6 +89,7 @@ def updateConquerableStations(self):
     corporation, corpCreated = Corporation.objects.get_or_create(pk=corporationID)
 
     if corpCreated:
+      print "updateCorp"
       updateCorporation.delay(corporation.pk)
     
     station, created = ConquerableStation.objects.get_or_create(
@@ -88,7 +97,7 @@ def updateConquerableStations(self):
       stationName     = stationName,
       stationType_id  = stationTypeID,
       solarSystem_id  = solarSystemID,
-      corporation     = corporationID,
+      corporation     = corporation,
       cachedUntil     = cachedUntil
     )
 
@@ -97,8 +106,8 @@ def updateConquerableStations(self):
       station.corporation = corporation 
       station.save()
     
-  for station in ConquerableStation.objects.all()
-    if station.expired();
+  for station in ConquerableStation.objects.all():
+    if station.expired():
       station.delete()
       logger.info("Deleting '%s' outdated conquerable Stations" % station.pk)
 
@@ -188,7 +197,8 @@ def updateCharacter(character_id):
 @locktask
 def updateCorporation(corporation_id):
   logger.debug("running updateCorporation for corporationId %s" % corporation_id)
-
+  print "updateCorporation : " + str(corporation_id)
+  
   corporation = Corporation.objects.get(pk=corporation_id)
 
   action = "/corp/CorporationSheet.xml.aspx"
@@ -198,8 +208,15 @@ def updateCorporation(corporation_id):
   # ===================
   # = Error Handling  =
   # ===================
+  
+  error = xml.find("error")
 
   if xml.find("error") is not None:
+    
+    errorCode     = error.get('code')
+    errorMessage  = error.text
+    
+    print "updateCorporation xml error"
     return False
 
   # =============
@@ -207,6 +224,9 @@ def updateCorporation(corporation_id):
   # =============
 
   else:
+    
+    print "updateCorporation xml ok"
+    
     corporation.corporationName = xml.find("result/corporationName").text
     corporation.description     = xml.find("result/description").text
 
@@ -221,7 +241,9 @@ def updateCorporation(corporation_id):
       #
       # NPC characterID's can be identified via the static data dump !
       #
-
+      
+      print "create ceo"
+      
       logger.info("Created character with id %s" % ceo.characterID)
       updateCharacter.delay(ceo.pk)
 
