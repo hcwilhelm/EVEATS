@@ -194,9 +194,9 @@ class staStations(models.Model):
 # ===================
 
 class staStationTypes(models.Model):
-  stationTypeID = models.IntegerField(primary_key=True) # Field name made lowercase.
+  stationTypeID = models.IntegerField(primary_key=True)
 
-class Meta:
+  class Meta:
     db_table = u'staStationTypes'
     managed = False
 
