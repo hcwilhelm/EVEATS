@@ -360,10 +360,12 @@ def updateAssetList(object_id, type):
     # Check if the object is a Character
     #
 
-    if type == Character:
-
+   
+    
+    if type == "Character":
+      
       object = Character.objects.get(pk=object_id)
-
+      print object.apiKeys.all()
       #
       # Check if the object has a related APIKey
       #
@@ -376,13 +378,12 @@ def updateAssetList(object_id, type):
       action  = "/char/AssetList.xml.aspx"
       params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode, 'characterID':char.characterID})
 
-      xml_root     = getXMLFromEveAPI(action, params)
-
+      print etree.tostring(xml_root)
     #
     # Check if the object is a Corporation
     #
 
-    elif type == Corporation:
+    elif type == "Corporation":
 
       object = Corporation.objects.get(pk=object_id)
 

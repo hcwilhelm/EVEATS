@@ -77,7 +77,7 @@ class invMarketGroups(models.Model):
     hasTypes            = models.BooleanField()
 
     class Meta:
-        db_table        = "invmarketgroups"
+        db_table        = "invMarketGroups"
         managed         = False
 
     def __unicode__(self):

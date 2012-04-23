@@ -5,8 +5,8 @@
 #  Created by Hans Christian Wilhelm on 2012-02-17.
 #  Copyright 2012 scienceondope.org All rights reserved.
 #
-
 #
+
 from common.views import JSONResponse
 from eve.models import *
 from eve.tasks import *
@@ -17,18 +17,7 @@ from django.contrib.auth.decorators import login_required
 
 from django.http import HttpResponse
 
-from django.core.serializers.json import DjangoJSONEncoder
-from django.core import serializers
-from django.utils import simplejson
-
-from django.db.models.query import QuerySet
 from celery.task.sets import TaskSet
-
-class HandleQuerySets(DjangoJSONEncoder):
-  def default(self, obj):
-    if type(obj) == QuerySet:
-      return serializers.serialize("python", obj, ensure_ascii=False)
-    return DjangoJSONEncoder.default(self, obj)
 
 # ======================
 # = APIKey Operations  =
@@ -157,45 +146,72 @@ def corporations(request):
 # = Query Assets =
 # ================
 
+from functools import wraps
+
+#
+# This Decorater makes sure the User has permission
+# to query assets for a Character. It also checks if
+# the Characters exists or if the Character assets need
+# to be updated
+#
+
+def character_permission_required(function):
+  @wraps(function)
+  def wrapper(request, id, *args, **kwargs):
+    
+    response  = HttpResponse(mimetype="application/json")
+    char      = None
+    
+    try:
+      char = Character.objects.get(pk=id)
+    
+    except Exception, e:
+      jsonResponse = JSONResponse(success=False, message=str(e))
+      response.write(jsonResponse.json())
+      return response
+    
+    if not request.user.has_perm('eve.viewAssetList_character', char):
+      jsonResponse = JSONResponse(success=False, message="You don't have permission")
+      response.write(jsonResponse.json())
+      return response
+      
+    if char.assetList == None:
+      result = updateAssetList.delay(char.pk, "Character")
+
+      jsonResponse = JSONResponse(success=True, taskID=result.task_id)
+      response.write(jsonResponse.json())
+      return response
+      
+    if char.assetList.expired():
+      result = updateAssetList.delay(char.pk, "Character")
+
+      jsonResponse = JSONResponse(success=True, taskID=result.task_id)
+      response.write(jsonResponse.json())
+      return response
+      
+    else:
+      return function(request, id, *args, **kwargs)
+    
+  return wrapper
+
+
 @login_required(login_url="/common/authentificationError")
-def characterAssets(request, ID):
+@character_permission_required
+def characterAssetsByMarketGroup(request, id, marketGroup_id=None):
   response = HttpResponse(mimetype="application/json")
 
-  char = None
-
-  try:
-    char = Character.objects.get(pk=ID)
-
-  except Exception, e:
-    jsonResponse = JSONResponse(success=False, message=str(e))
+  char = Character.objects.get(pk=id)
+  
+  if marketGroup_id == None:
+    asstes = char.assetList.asset_set.all()
+    jsonResponse = JSONResponse(success=True, result=assets)
     response.write(jsonResponse.json())
-    return response
-
-  taskResult = None
-
-  if request.user.has_perm('eve.viewAssetList_character', char):
-    if char.assetList is None:
-     taskResult = updateAssetList.delay(char.pk, Character)
-
-    elif char.assetList.expired():
-      taskResult = updateAssetList.delay(char.pk, Character)
-
-    if taskResult is not None:
-      if taskResult.get():
-        char = Character.objects.get(pk=ID)
-        assets = char.assetList.asset_set.all()
-        jsonResponse = JSONResponse(success=True, result=assets)
-        response.write(jsonResponse.json())
-
-      else:
-        jsonResponse = JSONResponse(success=False, message="Assets import Error")
-        response.write(jsonResponse.json())
-
-    else:
-      assets = char.assetList.asset_set.all()
-      jsonResponse = JSONResponse(success=True, result=assets)
-      response.write(jsonResponse.json())
-
+  
+  #
+  # else need to be implemented but first we need to rejoin the apps evedb and eve
+  #
+  
+  
 
   return response
 
