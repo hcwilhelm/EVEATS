@@ -1,1 +1,51 @@
-# Create your views here.
+# 
+#  views.py
+#  Backend
+#  
+#  Created by Hans Christian Wilhelm on 2012-04-24.
+#  Copyright 2012 scienceondope.org All rights reserved.
+# 
+
+
+from django.utils import simplejson
+from django.http import HttpResponse
+
+from evedb.models import *
+
+# ==============================================
+# = Simple Views to access the EVE static dump =
+# ==============================================
+
+
+def invType(request, typeID):
+  response = HttpResponse(mimetype="application/json")
+  
+  result = invTypes.objects.values().get(pk=typeID)
+  
+  response.write(simplejson.dumps(result, indent=2))
+  return response
+  
+def invMarketGroup(request, marketGroupID):
+  response = HttpResponse(mimetype="application/json")
+  
+  result = invMarketGroups.objects.values().get(pk=marketGroupID)
+  
+  response.write(simplejson.dumps(result, indent=2))
+  return response
+  
+def invMarketGroupTree(request):
+  response = HttpResponse(mimetype="application/json")
+  
+  expand = lambda obj: {
+    "marketGroupID":obj.marketGroupID, 
+    "marketGroupName":obj.marketGroupName,
+    "description":obj.description,
+    "iconID":obj.iconID_id,
+    "hasTypes":obj.hasTypes,
+    "childs":[expand(x) for x in obj.invmarketgroups_set.all()]
+  }
+  
+  groups = [expand(x) for x in invMarketGroups.objects.filter(parentGroupID=None)]
+  
+  response.write(simplejson.dumps(groups, indent=2))
+  return response

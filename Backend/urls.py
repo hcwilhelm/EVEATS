@@ -47,6 +47,10 @@ urlpatterns = patterns('',
     url(r'^eve/characterAssetsByMarketGroup/(?P<charID>\d+)/(?P<marketGroupID>\d+)$', 'eve.views.characterAssetsByMarketGroup'),
     url(r'^eve/characterAssetsByTypeName/(?P<charID>\d+)/(?P<typeName>\w+)$', 'eve.views.characterAssetsByTypeName'),
     
+    # evedb app
+    url(r'^evedb/invType/(?P<typeID>\d+)/$', 'evedb.views.invType'),
+    url(r'^evedb/invMarketGroup/(?P<marketGroupID>\d+)/$', 'evedb.views.invMarketGroup'),
+    url(r'^evedb/invMarketGroupTree/$', 'evedb.views.invMarketGroupTree'),
     
     # common app
     url(r'^common/authentificationError/$', 'common.views.authentificationError'),
