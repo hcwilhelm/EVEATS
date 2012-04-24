@@ -207,9 +207,7 @@ def characterAssetsByMarketGroup(request, id, marketGroup_id=None):
     jsonResponse = JSONResponse(success=True, result=assets)
     response.write(jsonResponse.json())
   
-  #
-  # else need to be implemented but first we need to rejoin the apps evedb and eve
-  #
+  
   
   
 

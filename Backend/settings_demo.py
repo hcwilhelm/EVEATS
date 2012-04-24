@@ -18,20 +18,7 @@ DATABASES = {
         'HOST'      :   'localhost',
         'PORT'      :   '3306',
     },
-
-    'evedb': {
-        'ENGINE'    :   'django.db.backends.mysql',
-        'NAME'      :   '',
-        'USER'      :   '',
-        'PASSWORD'  :   '',
-        'HOST'      :   'localhost',
-        'PORT'      :   '3306'
-    }
 }
-
-# Database Routers
-# used to separate the EVE static dump from our own data
-DATABASE_ROUTERS = ['evedb.router.EveDBRouter']
 
 
 # EVE API Connection URL
