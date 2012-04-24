@@ -30,7 +30,7 @@ class JSONResponse:
   def json(self):
     return simplejson.dumps(
         {"success": self.success, "message": self.message, "result": self.result, "taskID": self.taskID},
-      cls=HandleQuerySets)
+      cls=HandleQuerySets, indent=2)
 
 
 def authentificationError(request):
