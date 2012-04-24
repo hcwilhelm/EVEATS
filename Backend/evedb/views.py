@@ -9,6 +9,7 @@
 
 from django.utils import simplejson
 from django.http import HttpResponse
+from django.views.decorators.cache import cache_page
 
 from evedb.models import *
 
@@ -16,7 +17,7 @@ from evedb.models import *
 # = Simple Views to access the EVE static dump =
 # ==============================================
 
-
+@cache_page(60 * 60 * 24)
 def invType(request, typeID):
   response = HttpResponse(mimetype="application/json")
   
@@ -25,6 +26,7 @@ def invType(request, typeID):
   response.write(simplejson.dumps(result, indent=2))
   return response
   
+@cache_page(60 * 60 * 24)  
 def invMarketGroup(request, marketGroupID):
   response = HttpResponse(mimetype="application/json")
   
@@ -32,7 +34,8 @@ def invMarketGroup(request, marketGroupID):
   
   response.write(simplejson.dumps(result, indent=2))
   return response
-  
+
+@cache_page(60 * 60 * 24)  
 def invMarketGroupTree(request):
   response = HttpResponse(mimetype="application/json")
   
