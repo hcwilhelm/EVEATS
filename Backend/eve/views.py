@@ -157,13 +157,13 @@ from functools import wraps
 
 def character_permission_required(function):
   @wraps(function)
-  def wrapper(request, id, *args, **kwargs):
+  def wrapper(request, charID, *args, **kwargs):
     
     response  = HttpResponse(mimetype="application/json")
     char      = None
     
     try:
-      char = Character.objects.get(pk=id)
+      char = Character.objects.get(pk=charID)
     
     except Exception, e:
       jsonResponse = JSONResponse(success=False, message=str(e))
@@ -190,27 +190,42 @@ def character_permission_required(function):
       return response
       
     else:
-      return function(request, id, *args, **kwargs)
+      return function(request, charID, *args, **kwargs)
     
   return wrapper
 
 
 @login_required(login_url="/common/authentificationError")
 @character_permission_required
-def characterAssetsByMarketGroup(request, id, marketGroup_id=None):
+def characterAssetsByMarketGroup(request, charID, marketGroupID=None):
   response = HttpResponse(mimetype="application/json")
 
-  char = Character.objects.get(pk=id)
+  char = Character.objects.get(pk=charID)
   
-  if marketGroup_id == None:
-    asstes = char.assetList.asset_set.all()
+  if marketGroupID == None:
+    assets = char.assetList.asset_set.all()
     jsonResponse = JSONResponse(success=True, result=assets)
     response.write(jsonResponse.json())
   
-  
-  
-  
+  else:
+    assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID)
+    jsonResponse = JSONResponse(success=True, result=assets)
+    response.write(jsonResponse.json())
 
   return response
 
+@login_required(login_url="/common/authentificationError")
+@character_permission_required
+def characterAssetsByTypeName(request, charID, typeName=""):
+  response = HttpResponse(mimetype="application/json")
 
+  char = Character.objects.get(pk=charID)
+  
+  assets = char.assetList.asset_set.filter(typeID__typeName__icontains = typeName)
+  jsonResponse = JSONResponse(success=True, result=assets)
+  response.write(jsonResponse.json())
+  
+  return response
+  
+  
+  

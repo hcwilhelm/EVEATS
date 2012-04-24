@@ -359,13 +359,11 @@ def updateAssetList(object_id, type):
     #
     # Check if the object is a Character
     #
-
-   
     
     if type == "Character":
       
       object = Character.objects.get(pk=object_id)
-      print object.apiKeys.all()
+      
       #
       # Check if the object has a related APIKey
       #
@@ -377,8 +375,9 @@ def updateAssetList(object_id, type):
       char    = object
       action  = "/char/AssetList.xml.aspx"
       params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode, 'characterID':char.characterID})
-
-      print etree.tostring(xml_root)
+      
+      xml_root     = getXMLFromEveAPI(action, params)
+      
     #
     # Check if the object is a Corporation
     #
@@ -492,7 +491,7 @@ def updateAssetList(object_id, type):
         #
         # Custom state to expose progress to the Frontend ;)
         #
-
+        print {"current": current, "total": int(total)}
         updateAssetList.update_state(state="PROGRESS", meta={"current": current, "total": int(total)})
 
     print "ImportAssetListTask : " + str(object.pk) + " : Done"

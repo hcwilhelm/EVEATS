@@ -43,8 +43,11 @@ urlpatterns = patterns('',
     url(r'^eve/apiKeys/$', 'eve.views.apiKeys'),
     url(r'^eve/characters/$', 'eve.views.characters'),
     url(r'^eve/corporations/$', 'eve.views.corporations'),
-    url(r'^eve/characterAssetsByMarketGroup/(?P<id>\d+)/$', 'eve.views.characterAssetsByMarketGroup'),
-
+    url(r'^eve/characterAssetsByMarketGroup/(?P<charID>\d+)/$', 'eve.views.characterAssetsByMarketGroup'),
+    url(r'^eve/characterAssetsByMarketGroup/(?P<charID>\d+)/(?P<marketGroupID>\d+)$', 'eve.views.characterAssetsByMarketGroup'),
+    url(r'^eve/characterAssetsByTypeName/(?P<charID>\d+)/(?P<typeName>\w+)$', 'eve.views.characterAssetsByTypeName'),
+    
+    
     # common app
     url(r'^common/authentificationError/$', 'common.views.authentificationError'),
     url(r'^common/permissionError/$', 'common.views.permissionError'),
