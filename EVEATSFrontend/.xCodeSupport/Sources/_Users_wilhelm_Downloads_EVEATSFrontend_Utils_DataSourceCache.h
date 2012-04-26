@@ -1,0 +1,7 @@
+
+@interface DataSourceCache : NSObject
+{
+
+}
+
+@end

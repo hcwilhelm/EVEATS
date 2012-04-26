@@ -4,6 +4,7 @@
 from eve.models import *
 from evedb.models import *
 from helper import getXMLFromEveAPI
+from django.db import transaction
 
 # ===========================================================================
 # = Import celery modules                                                   =
@@ -349,6 +350,7 @@ def updateAPIKey(apiKey_id):
 
 @task
 @locktask
+@transaction.commit_on_success
 def updateAssetList(object_id, type):
 
     print "ImportAssetListTask : " + str(object_id)
@@ -491,7 +493,6 @@ def updateAssetList(object_id, type):
         #
         # Custom state to expose progress to the Frontend ;)
         #
-        print {"current": current, "total": int(total)}
         updateAssetList.update_state(state="PROGRESS", meta={"current": current, "total": int(total)})
 
     print "ImportAssetListTask : " + str(object.pk) + " : Done"

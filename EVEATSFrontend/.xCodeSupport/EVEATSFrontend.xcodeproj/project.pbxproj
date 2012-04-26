@@ -30,6 +30,7 @@
 		9EEC449C135749D300615446 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		9EEC44B4135749D300615446 /* AnotherTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnotherTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9EEC44CB13574A0B00615446 /* EVEATSFrontend */ = {isa = PBXFileReference; lastKnownFileType = folder; name = EVEATSFrontend; path = ..; sourceTree = "<group>"; };
+		EDDDDE811549A9EC008B597F /* AssetsView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = AssetsView.xib; path = ../Resources/AssetsView.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +56,7 @@
 		9EEC4488135749D200615446 = {
 			isa = PBXGroup;
 			children = (
+				EDDDDE811549A9EC008B597F /* AssetsView.xib */,
 				9EEC44CB13574A0B00615446 /* EVEATSFrontend */,
 				9EEC4496135749D200615446 /* Frameworks */,
 				9EEC4494135749D200615446 /* Products */,
@@ -136,7 +138,7 @@
 			attributes = {
 				ORGANIZATIONNAME = "280 North, Inc.";
 			};
-			buildConfigurationList = 9EEC448D135749D200615446 /* Build configuration list for PBXProject "Another" */;
+			buildConfigurationList = 9EEC448D135749D200615446 /* Build configuration list for PBXProject "EVEATSFrontend" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -323,7 +325,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		9EEC448D135749D200615446 /* Build configuration list for PBXProject "Another" */ = {
+		9EEC448D135749D200615446 /* Build configuration list for PBXProject "EVEATSFrontend" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9EEC44C3135749D300615446 /* Debug */,
@@ -339,6 +341,7 @@
 				9EEC44C7135749D300615446 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		9EEC44C8135749D300615446 /* Build configuration list for PBXNativeTarget "AnotherTests" */ = {
 			isa = XCConfigurationList;
@@ -347,6 +350,7 @@
 				9EEC44CA135749D300615446 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

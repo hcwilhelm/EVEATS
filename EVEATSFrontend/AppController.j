@@ -8,9 +8,15 @@
 
 @import <Foundation/CPObject.j>
 
-@import "LoginController.j"
-@import "UserController.j"
-@import "ImageCache.j"
+@import "Views/EVMenuItem.j"
+
+@import "Controllers/LoginController.j"
+@import "Controllers/UserController.j"
+@import "Controllers/AssetsController.j"
+
+@import "Utils/BackendURLS.j"
+@import "Utils/ImageCache.j"
+@import "Utils/DataSourceCache.j"
 
 // ===========================
 // = Toolbar item identifier =
@@ -21,51 +27,35 @@ var CharSelectorToolbarItem         = "CharSelectorToolbarItem";
 var ManageAccountToolbarItem        = "ManageAccountToolbarItem";
 var AssetsToolbarItem               = "AssetsToolbarItem";
 
-
-// ==============
-// = Used URL's =
-// ==============
-
-var apiKeysURL      = "/eveapi/apiKeys/";
-var charactersURL   = "/eveapi/characters/";
-
 // =======================
 // = Class AppController =
 // =======================
 
 @implementation AppController : CPObject
 {
-  // ===========================================
-  // = Indentation reflects the Views hirachie =
-  // ===========================================
-  
-    @outlet CPWindow                      theWindow;
-        @outlet CPSplitView               splitViewMain;
-          @outlet CPView                  navigationArea;
-              @outlet CPView              filterView;
-              @outlet CPSplitView         navigationSplitView;
-                  @outlet CPView          dataView;
-                  @outlet CPView          metaInfoView;
-                      @outlet CPView      metaInfoLabelView;
-              @outlet CPButtonBar         navigationAreaButtonBar;
-          @outlet CPView                  contentView;
+    @outlet CPWindow      theWindow;
+    
+    //
+    // The plan is to always have only one Subview !
+    // Dunno if this is smart ! 
+    // 
+    
+    CPView                _mainView
+    CPView                _mainSubview
 
     CPToolbar             _toolbar;
     CPImageView           _charImageView;
     
     CPWindowController    _loginController;
     CPViewController      _userController;
-    
-    CPButton              _hideButton;
-    CPImage               _hideButtonImageDisable;
-    CPImage               _hideButtonImageEnable;
-    BOOL                  _metaInfoViewVisible;
+    CPViewController      _assetsController;
     
     CPURLConnection       _apiKeyConnection;
     CPURLConnection       _charactersConnection;
+    CPURLConnection       _corporationsConnection;
     
     CPObject              _characters;
-    int                   _selectedChar;
+    id                    _selectedChar;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
@@ -83,8 +73,6 @@ var charactersURL   = "/eveapi/characters/";
       selector:@selector(APIKeyChangedNotificationPosted:)
       name:UserControllerAPIKeyChanged
       object:nil];
-      
-
 }
 
 - (void)awakeFromCib
@@ -94,6 +82,12 @@ var charactersURL   = "/eveapi/characters/";
   // =================================================================
  
   [theWindow setFullPlatformWindow:YES];
+  
+  _mainView     = [theWindow contentView]
+  _mainSubview  = [[CPView alloc] init]
+  
+  [_mainView addSubview:_mainSubview]
+  
     
   // =====================
   // = Setup the toolbar =
@@ -124,74 +118,6 @@ var charactersURL   = "/eveapi/characters/";
   [[_loginController window] setMovable:NO];
   [[_loginController window] orderFront:self];
   
-  
-  // =================
-  // = splitViewMain =
-  // =================
-
-  [splitViewMain setIsPaneSplitter:NO];
-  [splitViewMain setPosition:250 ofDividerAtIndex:0];
-  
-  [navigationArea setAutoresizingMask:CPViewNotSizable];
-  [contentView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
-  
-  // ==============
-  // = filterView =
-  // ==============
-  
-  [filterView setBackgroundColor:[CPColor colorWithPatternImage:[[CPImage alloc] initWithContentsOfFile:"./Resources/Backgrounds/background-filter.png"]]];
-  
-  // =======================
-  // = navigationSplitView =
-  // =======================
-  
-  [navigationSplitView setIsPaneSplitter:NO];
-  
-  [dataView setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
-  [metaInfoView setAutoresizingMask:CPViewNotSizable];
-  
-  // =====================
-  // = metaInfoLabelView =
-  // =====================
-  
-  [metaInfoLabelView setBackgroundColor:[CPColor colorWithPatternImage:[[CPImage alloc] initWithContentsOfFile:"./Resources/Backgrounds/background-filter.png"]]];
-  
-  // ===========================
-  // = navigationAreaButtonBar =
-  // ===========================
-  
-  var bezelColor              = [CPColor colorWithPatternImage:[[CPImage alloc] initWithContentsOfFile:"./Resources/TNButtonBar/buttonBarBackground.png"]];
-  
-  var leftBezel               = [[CPImage alloc] initWithContentsOfFile:"./Resources/TNButtonBar/buttonBarLeftBezel.png"];
-  var centerBezel             = [[CPImage alloc] initWithContentsOfFile:"./Resources/TNButtonBar/buttonBarCenterBezel.png"];
-  var rightBezel              = [[CPImage alloc] initWithContentsOfFile:"./Resources/TNButtonBar/buttonBarRightBezel.png"];
-  var buttonBezel             = [CPColor colorWithPatternImage:[[CPThreePartImage alloc] initWithImageSlices:[leftBezel, centerBezel, rightBezel] isVertical:NO]];
-  
-  var leftBezelHighlighted    = [[CPImage alloc] initWithContentsOfFile:"./Resources/TNButtonBar/buttonBarLeftBezelHighlighted.png"];
-  var centerBezelHighlighted  = [[CPImage alloc] initWithContentsOfFile:"./Resources/TNButtonBar/buttonBarCenterBezelHighlighted.png"];
-  var rightBezelHighlighted   = [[CPImage alloc] initWithContentsOfFile:"./Resources/TNButtonBar/buttonBarRightBezelHighlighted.png"];
-  var buttonBezelHighlighted  = [CPColor colorWithPatternImage:[[CPThreePartImage alloc] initWithImageSlices:[leftBezelHighlighted, centerBezelHighlighted, rightBezelHighlighted] isVertical:NO]];
-  
-  [navigationAreaButtonBar setValue:bezelColor forThemeAttribute:"bezel-color"];
-  [navigationAreaButtonBar setValue:buttonBezel forThemeAttribute:"button-bezel-color"];
-  [navigationAreaButtonBar setValue:buttonBezelHighlighted forThemeAttribute:"button-bezel-color" inState:CPThemeStateHighlighted];
-  
-  _hideButtonImageEnable  = [[CPImage alloc] initWithContentsOfFile:"./Resources/IconsButtonBar/show.png"];
-  _hideButtonImageDisable = [[CPImage alloc] initWithContentsOfFile:"./Resources/IconsButtonBar/hide.png"];
-  
-  _hideButton = [CPButtonBar minusButton];
-  [_hideButton setImage:_hideButtonImageDisable];
-  [_hideButton setToolTip:"Display or hide the info view"];
-  [_hideButton setTarget:self];
-  [_hideButton setAction:@selector(toggleMetaInfoView:)];
-  
-  _metaInfoViewVisible = YES;
-  
-  var buttons = [CPArray array];
-  [buttons addObject:_hideButton];
-  
-  [navigationAreaButtonBar setButtons:buttons];
-  
 }
 
 // ============
@@ -217,28 +143,56 @@ var charactersURL   = "/eveapi/characters/";
 }
 
 -(@action) toolbarItemManageAccoutClicked:(id)sender
-{
-  if (_userController != nil)
+{ 
+  if (_userController)
   {
-    [[_userController view] removeFromSuperview]
-    _userController = nil;
+    [[_userController view] setFrame:[_mainView bounds]];
+    [[_userController view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+    
+    [_mainView replaceSubview:_mainSubview with:[_userController view]];
+    _mainSubview = [_userController view]
   }
   
-  _userController = [[UserController alloc] initWithCibName:"UserView" bundle:nil];
-  [[_userController view] setFrame:[contentView bounds]];
-  [[_userController view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+  else
+  {
+    _userController = [[UserController alloc] initWithCibName:"UserView" bundle:nil];
+    
+    [[_userController view] setFrame:[_mainView bounds]];
+    [[_userController view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+    
+    [_mainView replaceSubview:_mainSubview with:[_userController view]];
+    _mainSubview = [_userController view]
+  }
   
-  [contentView addSubview: [_userController view]];
+  
 }
 
 -(@action) toolbarItemAssetsClicked:(id)sender
 {
+  if (_assetsController)
+  {
+    [[_assetsController view] setFrame:[_mainView bounds]];
+    [[_assetsController view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+    
+    [_mainView replaceSubview:_mainSubview with:[_assetsController view]];
+    _mainSubview = [_assetsController view]
+  }
   
+  else
+  {
+    _assetsController = [[AssetsController alloc] initWithCibName:"AssetsView" bundle:nil];
+    
+    [[_assetsController view] setFrame:[_mainView bounds]];
+    [[_assetsController view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+    
+    [_mainView replaceSubview:_mainSubview with:[_assetsController view]];
+    _mainSubview = [_assetsController view]
+  }
 }
 
 -(@action) charChanged:(id)sender
 {
-  _selectedChar = [sender tag];
+  _selectedChar = [sender modelObject];
   [self updateCharToolbarView];
 }
 
@@ -248,11 +202,21 @@ var charactersURL   = "/eveapi/characters/";
 
 -(void) loginSuccessfulNotificationPosted:(id)sender
 {
-  var bundle = [CPBundle mainBundle];
-  var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
+  //
+  // Syncron apiKeys request. This triggers an APIKey update in the Backend
+  //
   
-  var request = [CPURLRequest requestWithURL:baseURL + charactersURL];
+  var request = [CPURLRequest requestWithURL:baseURL + eveAPIKeyURL];
+  var data    = [CPURLConnection sendSynchronousRequest:request returningResponse: nil];
+  
+  var obj = [data JSONObject]
+  [[DataSourceCache sharedCache] setApiKeys: [CPArray arrayWithObjects: obj.result]];
+  
+  var request = [CPURLRequest requestWithURL:baseURL + eveCharactersURL];
   _charactersConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+  
+  var request = [CPURLRequest requestWithURL:baseURL + eveCorporationsURL];
+  _corporationsConnection = [CPURLConnection connectionWithRequest:request delegate:self];
   
   [[_loginController window] close];
   [theWindow orderFront:self];
@@ -268,18 +232,20 @@ var charactersURL   = "/eveapi/characters/";
 }
 
 // =============================
-// = CPURLConnection delegates =
+// = CPURLConnection delegate =
 // =============================
 
 -(void) connection:(CPURLConnection)connection didReceiveData:(CPString)data
 {
-  var result = CPJSObjectCreateWithJSON(data);
+  var obj = CPJSObjectCreateWithJSON(data);
   
   if (connection == _charactersConnection)
   {
-    _characters = result;
+    console.log(obj);
     
     var toolbarItem = nil
+    
+    // Find the ToolbarItem
     
     for (var i = 0; i < [_toolbar items].length; ++i)
     {
@@ -289,24 +255,41 @@ var charactersURL   = "/eveapi/characters/";
       }
     }
     
-    [[toolbarItem view] removeAllItems];
+    // Add all Characters to the toolbarItem View
     
-    if (_characters != nil)
+    for (var i = 0; i < obj.result.length; ++i)
     {
-      for (var i = 0; i < _characters.length; ++i)
-      {
-        var menuItem = [[CPMenuItem alloc] init];
-        [menuItem setTarget:self];
-        [menuItem setAction:@selector(charChanged:)];
-        [menuItem setTitle:_characters[i].fields['characterName']];
-        [menuItem setTag:_characters[i].pk];
+      var menuItem = [[EVMenuItem alloc] init];
+      [menuItem setTarget:self];
+      [menuItem setAction:@selector(charChanged:)];
+      [menuItem setTitle:obj.result[i].fields.characterName];
+      [menuItem setModelObject:obj.result[i]];
         
-        [[toolbarItem view] addItem: menuItem];
+      [[toolbarItem view] addItem: menuItem];
+    }
+    
+    _selectedChar = [[[toolbarItem view] selectedItem] modelObject];
+    [self updateCharToolbarView];
+  }
+  
+  if (connection == _corporationsConnection)
+  {
+    console.log(obj)
+    
+    var toolbarItem = nil
+    
+    // Find the ToolbarItem
+    
+    for (var i = 0; i < [_toolbar items].length; ++i)
+    {
+      if ([[_toolbar items][i] itemIdentifier] == CharSelectorToolbarItem)
+      {
+        toolbarItem = [_toolbar items][i];
       }
     }
     
-    _selectedChar = [[[toolbarItem view] selectedItem] tag];
-    [self updateCharToolbarView];
+    
+    
   }
 }
 
@@ -349,9 +332,9 @@ var charactersURL   = "/eveapi/characters/";
 
   else if (anItemIdentifier == CharSelectorToolbarItem)
   {
-    var _selector = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0,128, 24)];
+    var selector = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0,128, 24)];
     
-    [toolbarItem setView:_selector];
+    [toolbarItem setView:selector];
     [toolbarItem setLabel:"Switch Character"]
     [toolbarItem setMinSize:CGSizeMake(128, 24)];
     [toolbarItem setMaxSize:CGSizeMake(128, 24)];
@@ -387,7 +370,7 @@ var charactersURL   = "/eveapi/characters/";
 -(void) updateCharToolbarView
 {
   [_charImageView removeFromSuperview];
-  [_charImageView setImage:[[ImageCache sharedCache] getCharImageForID:_selectedChar]];
+  [_charImageView setImage:[[ImageCache sharedCache] getImageForObject:_selectedChar]];
   
   var toolbarView = [_toolbar _toolbarView];
   [toolbarView addSubview:_charImageView];
