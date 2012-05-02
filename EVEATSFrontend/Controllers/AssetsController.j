@@ -8,6 +8,9 @@
 
 @import <Foundation/Foundation.j>
 
+@import "../Utils/BackendURLS.j"
+@import "../Views/EVMarketGroupOutlineView.j"
+
 @implementation AssetsController : CPViewController
 {
   @outlet CPView                  navigationView;
@@ -19,10 +22,15 @@
     @outlet CPButtonBar           navigationButtonBar;
   @outlet CPView                  contentView;
   
+  CPScrollView                    _outlineScrollView;
+  EVMarketGroupOutlineView        _outlineView;
+  
   CPButton                        _hideButton;
   CPImage                         _hideButtonImageDisable;
   CPImage                         _hideButtonImageEnable;
   BOOL                            _metaInfoViewVisible;
+  
+  CPDictionary                    _treeData;
 }
 
 -(void)awakeFromCib
@@ -95,6 +103,30 @@
   [buttons addObject:_hideButton];
   
   [navigationButtonBar setButtons:buttons];
+  
+  // ================
+  // = OutlineView  =
+  // ================
+  
+  _outlineScrollView = [[CPScrollView alloc] initWithFrame:[navigationDataView bounds]];
+  [_outlineScrollView setAutoresizingMask:CPViewHeightSizable | CPViewWidthSizable];
+  [_outlineScrollView setAutohidesScrollers:YES];
+  
+  _outlineView = [[EVMarketGroupOutlineView alloc] initWithFrame:[navigationDataView bounds]];
+  [_outlineView setDelegate:self];
+  [_outlineView setEnabled:NO];
+  
+  
+  [_outlineScrollView setDocumentView:_outlineView];
+  [navigationDataView addSubview:_outlineScrollView];
+  
+  [self loadTreeData]
+}
+
+-(void) loadTreeData
+{
+  var request     = [CPURLRequest requestWithURL:baseURL + eveMarketGroupTreeURL];
+  var connection  = [CPURLConnection connectionWithRequest:request delegate:self];
 }
 
 -(@action) toggleMetaInfoView:(id)sender
@@ -114,5 +146,71 @@
     _metaInfoViewVisible = YES;
   }
 }
+
+// =============================
+// = CPURLConnection Delegates =
+// =============================
+
+-(void) connection:(CPURLConnection)connection didReceiveData:(CPString)data
+{
+  _treeData = [CPDictionary dictionaryWithJSObject: CPJSObjectCreateWithJSON(data) recursively:YES]
+
+  [_outlineView setDataSource:self];
+  [_outlineView setEnabled:YES];
+}
+
+// ====================================
+// = OutlineView DataSource delegates =
+// ====================================
+
+-(id) outlineView:(CPOutlineView)outlineView child:(CPInteger)index ofItem:(id)item
+{
+  if (item)
+  {
+    return [[item objectForKey:@"childs"] objectAtIndex:index];
+  }
+  
+  else
+  {
+    return [_treeData objectForKey:index];
+  }
+} 
+
+-(BOOL) outlineView:(CPOutlineView)outlineView isItemExpandable:(id)item
+{
+  if ([[item objectForKey:@"childs"] count] > 0)
+  {
+    return YES;
+  }
+  
+  else
+  {
+    return NO;
+  }
+} 
+
+-(int) outlineView:(CPOutlineView)outlineView numberOfChildrenOfItem:(id)item
+{
+  if (item)
+  {
+    return [[item objectForKey:@"childs"] count];
+  }
+  
+  else
+  {
+    return [_treeData count];
+  }
+} 
+
+-(id) outlineView:(CPOutlineView)outlineView objectValueForTableColumn:(CPTableColumn)tableColumn byItem:(id)item
+{
+  return item;
+}
+
+// =========================
+// = OutlineView delegates =
+// =========================
+
+
 
 @end
