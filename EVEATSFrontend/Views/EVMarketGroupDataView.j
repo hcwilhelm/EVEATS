@@ -23,8 +23,8 @@
   
   if (self)
   {
-    _groupIcon = [[CPImageView alloc] initWithFrame:CGRectMake(0,0,16,16)];
-    _groupName = [[CPTextField alloc] initWithFrame:CGRectMake(20,0,300,20)]; // Rect Values needs to be adjusted
+    _groupIcon = [[CPImageView alloc] initWithFrame:CGRectMake(2,2,16,16)];
+    _groupName = [[CPTextField alloc] initWithFrame:CGRectMake(20,2,300, 20)]; // Rect Values needs to be adjusted
     
     [self addSubview: _groupIcon];
     [self addSubview: _groupName];
@@ -35,20 +35,49 @@
 
 -(void) setObjectValue:(id)obj
 {
-  console.log(obj);
   
-  if (!obj)
+  if ([obj objectForKey:@"iconID"] != [CPNull null])
   {
-    return;
+    imageFile = [obj objectForKey:@"iconID"];
+    
+    // =======================================
+    // = Special cases, I hate CCP for this  =
+    // =======================================
+    if (imageFile == @"65_03")
+    {
+      imageFile = @"65_128_3";
+      
+      var icon = [[CPImage alloc] initWithContentsOfFile:"./Resources/EveImageDump/Icons/items/" + imageFile + ".png"];
+      [_groupIcon setImage:icon]
+    }
+    
+    else if (imageFile.search(/apparel/) != -1)
+    {
+      var icon = [[CPImage alloc] initWithContentsOfFile:"./Resources/EveImageDump/Icons/items/" + "38_16_189" + ".png"];
+      [_groupIcon setImage:icon]
+    }
+    
+    else
+    {
+      imageFile = imageFile.replace(/^0/, "");
+      imageFile = imageFile.replace(/_0/, "_");
+      imageFile = imageFile.replace(/_/, "_64_");
+      
+      var icon = [[CPImage alloc] initWithContentsOfFile:"./Resources/EveImageDump/Icons/items/" + imageFile + ".png"];
+      [_groupIcon setImage:icon]
+    }
   }
   
-  if ([obj objectForKey:@"iconID"] != nil)
+  else 
   {
-    var icon = [[CPImage alloc] initWithContentsOfFile:"./Resources/EveIcons/iconID_" + [obj objectForKey:@"iconID"] + "_grey.jpg"];
+    var icon = [[CPImage alloc] initWithContentsOfFile:"./Resources/EveImageDump/Icons/items/" + "38_16_189" + ".png"];
     [_groupIcon setImage:icon]
   }
   
   [_groupName setStringValue:[obj objectForKey:@"marketGroupName"]];
+  
+  _groupID  = [obj objectForKey:@"groupID"];
+  _groupDescription = [obj objectForKey:@"groupDescription"]
 }
 
 -(id) initWithCoder:(CPCoder)aCoder

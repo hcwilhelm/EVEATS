@@ -35,7 +35,7 @@ def invMarketGroup(request, marketGroupID):
   response.write(simplejson.dumps(result, indent=2))
   return response
 
-@cache_page(60 * 60 * 24)  
+#@cache_page(60 * 60 * 24)  
 def invMarketGroupTree(request):
   response = HttpResponse(mimetype="application/json")
   
@@ -43,7 +43,7 @@ def invMarketGroupTree(request):
     "marketGroupID":obj.marketGroupID, 
     "marketGroupName":obj.marketGroupName,
     "description":obj.description,
-    "iconID":obj.iconID_id,
+    "iconID":(obj.iconID.iconFile if obj.iconID != None else None),
     "hasTypes":obj.hasTypes,
     "childs":[expand(x) for x in obj.invmarketgroups_set.all()]
   }

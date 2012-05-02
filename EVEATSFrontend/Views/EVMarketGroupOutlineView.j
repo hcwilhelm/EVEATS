@@ -31,6 +31,7 @@
     [self setAutoresizingMask:CPViewHeightSizable | CPViewWidthSizable];
     [self setHeaderView:nil];
     [self setCornerView:nil];
+    [self setRowHeight:20];
     [self setColumnAutoresizingStyle:CPTableViewLastColumnOnlyAutoresizingStyle];
     [self addTableColumn:marketGroupColumn];
     [self setOutlineTableColumn:marketGroupColumn];

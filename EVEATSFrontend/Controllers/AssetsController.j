@@ -21,6 +21,7 @@
         @outlet CPView            navigationMetaInfoLabelView;
     @outlet CPButtonBar           navigationButtonBar;
   @outlet CPView                  contentView;
+    @outlet CPSplitView           contentSplitView;
   
   CPScrollView                    _outlineScrollView;
   EVMarketGroupOutlineView        _outlineView;
@@ -211,6 +212,10 @@
 // = OutlineView delegates =
 // =========================
 
+-(void) outlineViewSelectionDidChange:(CPNotification)notification
+{
+  console.log(notification);
+}
 
 
 @end
