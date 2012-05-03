@@ -18,6 +18,13 @@
 @import "Utils/ImageCache.j"
 @import "Utils/DataSourceCache.j"
 
+
+// ================
+// = Global var's =
+// ================
+
+EVSelectedCharacter = nil;
+
 // ===========================
 // = Toolbar item identifier =
 // ===========================
@@ -55,7 +62,6 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
     CPURLConnection       _corporationsConnection;
     
     CPObject              _characters;
-    id                    _selectedChar;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
@@ -103,7 +109,7 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   // = selectedChar default value and charToolbarView  =
   // ===================================================
   
-  _selectedChar = 1;
+  EVSelectedCharacter = 1;
   _charImageView = [[CPImageView alloc] initWithFrame:CGRectMake(0,0,59, 59)];
   
   [self updateCharToolbarView];
@@ -123,24 +129,6 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
 // ============
 // = Actions  =
 // ============
-
--(@action) toggleMetaInfoView:(id)sender
-{
-  if (_metaInfoViewVisible)
-  {
-    [metaInfoView removeFromSuperview];
-    [_hideButton setImage:_hideButtonImageEnable];
-    _metaInfoViewVisible = NO;
-  }
-  
-  else 
-  {
-    [navigationSplitView addSubview:metaInfoView];
-    [navigationSplitView setPosition:[metaInfoView frame].origin.y ofDividerAtIndex:0];
-    [_hideButton setImage:_hideButtonImageDisable];
-    _metaInfoViewVisible = YES;
-  }
-}
 
 -(@action) toolbarItemManageAccoutClicked:(id)sender
 { 
@@ -163,8 +151,6 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
     [_mainView replaceSubview:_mainSubview with:[_userController view]];
     _mainSubview = [_userController view]
   }
-  
-  
 }
 
 -(@action) toolbarItemAssetsClicked:(id)sender
@@ -192,8 +178,9 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
 
 -(@action) charChanged:(id)sender
 {
-  _selectedChar = [sender modelObject];
+  EVSelectedCharacter = [sender modelObject];
   [self updateCharToolbarView];
+  console.log(EVSelectedCharacter);
 }
 
 // ===================================
@@ -268,7 +255,7 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
       [[toolbarItem view] addItem: menuItem];
     }
     
-    _selectedChar = [[[toolbarItem view] selectedItem] modelObject];
+    EVSelectedCharacter = [[[toolbarItem view] selectedItem] modelObject];
     [self updateCharToolbarView];
   }
   
@@ -370,7 +357,7 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
 -(void) updateCharToolbarView
 {
   [_charImageView removeFromSuperview];
-  [_charImageView setImage:[[ImageCache sharedCache] getImageForObject:_selectedChar]];
+  [_charImageView setImage:[[ImageCache sharedCache] getImageForObject:EVSelectedCharacter]];
   
   var toolbarView = [_toolbar _toolbarView];
   [toolbarView addSubview:_charImageView];

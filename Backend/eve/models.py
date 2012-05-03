@@ -150,6 +150,13 @@ class Asset(models.Model):
   flag              = models.ForeignKey('evedb.invFlags')
   singleton         = models.BooleanField()
   rawQuantity       = models.IntegerField(null=True, blank=True)
+  
+  def getLocation(self):
+    if self.parent != None:
+      return self.parent.getLocation()
+    
+    else:
+      return self.locationID.itemName
 
 # ============================================================================================
 # = Class APIKey. Note !                                                                     =

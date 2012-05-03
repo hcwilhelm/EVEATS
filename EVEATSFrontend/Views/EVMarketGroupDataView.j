@@ -10,11 +10,11 @@
 
 @implementation EVMarketGroupDataView: CPView
 {
-  CPImageView     _groupIcon;
-  CPTextField     _groupName;
+  CPImageView     _groupIcon            @accessors(property=groupIcon);
+  CPTextField     _groupName            @accessors(property=groupName);
   
-  int             _groupID;
-  String          _groupDescription;
+  int             _groupID              @accessors(property=groupID);
+  String          _groupDescription     @accessors(property=groupDescription);
 }
 
 -(id) initWithFrame:(CPRect)aFrame

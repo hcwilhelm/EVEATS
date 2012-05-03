@@ -10,6 +10,8 @@
     IBOutlet CPButtonBar* navigationButtonBar;
     IBOutlet NSView* contentView;
     IBOutlet NSSplitView* contentSplitView;
+    IBOutlet NSView* assetView;
+    IBOutlet NSView* asserDetailView;
 }
 - (IBAction)toggleMetaInfoView:(id)aSender;
 @end

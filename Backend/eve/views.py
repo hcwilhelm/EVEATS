@@ -202,14 +202,25 @@ def characterAssetsByMarketGroup(request, charID, marketGroupID=None):
 
   char = Character.objects.get(pk=charID)
   
+  expand = lambda obj: {
+    "typeID":obj.typeID_id, 
+    "typeName":obj.typeID.typeName,
+    "locationName":obj.getLocation(),
+    "flag":obj.flag.flagName,
+    "quantity":obj.quantity,
+    "singleton":obj.singleton
+  }
+  
   if marketGroupID == None:
-    assets = char.assetList.asset_set.all()
-    jsonResponse = JSONResponse(success=True, result=assets)
+    assets = char.assetList.asset_set.all().order_by('-quantity')
+    result = [expand(x) for x in assets]
+    jsonResponse = JSONResponse(success=True, result=result)
     response.write(jsonResponse.json())
   
   else:
-    assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID)
-    jsonResponse = JSONResponse(success=True, result=assets)
+    assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).order_by('-quantity')
+    result = [expand(x) for x in assets]
+    jsonResponse = JSONResponse(success=True, result=result)
     response.write(jsonResponse.json())
 
   return response

@@ -13,6 +13,7 @@
 // =========
 
 var charImageURL = "http://image.eveonline.com/Character/";
+var typeImageURL = "http://image.eveonline.com/Type/";
 
 // =============
 // = Singleton =
@@ -28,6 +29,7 @@ IMGCache = nil;
 {
   CPDictionary _charImageDict;
   CPDictionary _corpImageDict;
+  CPDictionary _typeImageDict;
 }
 
 +(ImageCache)sharedCache
@@ -50,6 +52,7 @@ IMGCache = nil;
   {
     _charImageDict = [CPDictionary dictionary];
     _corpImageDict = [CPDictionary dictionary];
+    _typeImageDict = [CPDictionary dictionary];
   }
 
   return self;
@@ -68,7 +71,7 @@ IMGCache = nil;
     
     else
     {
-      var url = charImageURL + obj.pk + "_64" + ".jpg";
+      var url = charImageURL + obj.pk + "_64.jpg";
 
       image = [[CPImage alloc] initWithContentsOfFile:url];
       [_charImageDict setObject:image forKey:obj.pk];
@@ -79,4 +82,23 @@ IMGCache = nil;
   return image;
 }
 
+-(CPImage) getImageForTypeID:(int)typeID
+{
+  var image = nil;
+  
+  if ([_typeImageDict containsKey:typeID])
+  {
+    image = [_typeImageDict objectForKey:typeID];
+  }
+  
+  else
+  {
+    var url = typeImageURL + typeID + "_64.png"
+    
+    image = [[CPImage alloc] initWithContentsOfFile:url];
+    [_typeImageDict setObject:image forKey:typeID];
+  }
+  
+  return image;
+}
 @end
