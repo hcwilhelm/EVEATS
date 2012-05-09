@@ -3,6 +3,7 @@
 {
     IBOutlet NSView* navigationView;
     IBOutlet NSView* navigationFilterView;
+    IBOutlet NSSearchField* searchField;
     IBOutlet NSSplitView* navigationSplitView;
     IBOutlet NSView* navigationDataView;
     IBOutlet NSView* navigationMetaInfoView;

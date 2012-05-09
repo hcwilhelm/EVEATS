@@ -11,6 +11,7 @@ from common.views import JSONResponse
 from eve.models import *
 from eve.tasks import *
 
+from django.db.models import Avg, Max, Min, Count
 from django.contrib.auth.models import User
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
@@ -203,22 +204,23 @@ def characterAssetsByMarketGroup(request, charID, marketGroupID=None):
   char = Character.objects.get(pk=charID)
   
   expand = lambda obj: {
-    "typeID":obj.typeID_id, 
-    "typeName":obj.typeID.typeName,
-    "locationName":obj.getLocation(),
-    "flag":obj.flag.flagName,
-    "quantity":obj.quantity,
-    "singleton":obj.singleton
+    "typeID":obj['typeID'], 
+    "typeName": invTypes.objects.get(pk=obj['typeID']).typeName,
+    "locationName":mapDenormalize.objects.get(pk=obj['locationID']).itemName,
+    "locationID":obj['locationID'],
+    "quantity":obj['total'],
   }
   
   if marketGroupID == None:
-    assets = char.assetList.asset_set.all().order_by('-quantity')
+    assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).values('typeID','locationID').annotate(total = Count('quantity')).order_by('-total')
+    
     result = [expand(x) for x in assets]
     jsonResponse = JSONResponse(success=True, result=result)
     response.write(jsonResponse.json())
   
   else:
-    assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).order_by('-quantity')
+    assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).values('typeID','locationID').annotate(total = Count('quantity')).order_by('-total')
+    
     result = [expand(x) for x in assets]
     jsonResponse = JSONResponse(success=True, result=result)
     response.write(jsonResponse.json())
@@ -232,11 +234,90 @@ def characterAssetsByTypeName(request, charID, typeName=""):
 
   char = Character.objects.get(pk=charID)
   
-  assets = char.assetList.asset_set.filter(typeID__typeName__icontains = typeName)
-  jsonResponse = JSONResponse(success=True, result=assets)
+  expand = lambda obj: {
+    "typeID":obj['typeID'], 
+    "typeName": invTypes.objects.get(pk=obj['typeID']).typeName,
+    "locationName":mapDenormalize.objects.get(pk=obj['locationID']).itemName,
+    "locationID":obj['locationID'],
+    "quantity":obj['total'],
+  }
+  
+  assets = char.assetList.asset_set.filter(typeID__typeName__icontains = typeName).values('typeID','locationID').annotate(total = Count('quantity')).order_by('-total')[:10]
+  
+  result = [expand(x) for x in assets]
+  jsonResponse = JSONResponse(success=True, result=result)
   response.write(jsonResponse.json())
   
   return response
   
+  
+# =====================================================
+# = Tree Class, helper to build the Assets DetailView =
+# =====================================================  
+
+class Node:
+  def __init__(self, data="root"):
+    self.data     = data
+    self.childs   = []
+    
+  def insert(self, data):
+    self.childs.append(Node(data))
+    
+  def find(self, data):
+    
+    if self.data == data:
+      return self
+    
+    else:
+      for child in self.childs:
+        return child.find(data)
+    
+    return None
+  
+  
+@login_required(login_url="/common/authentificationError")
+@character_permission_required
+def characterAssetsDetailTree(request, charID, typeID, locationID):
+  response = HttpResponse(mimetype="application/json")
+  
+  char    = Character.objects.get(pk=charID)
+  assets  = char.assetList.asset_set.filter(typeID=typeID, locationID=locationID)
+  
+  paths   = [x.getPath() for x in assets]
+  root    = Node(locationID)
+  
+  for path in paths:
+    path.reverse()
+    
+    for asset in path:
+      node = root.find(asset)
+      
+      print(node)
+      
+      if not node:
+        node = root.find(asset.parent)
+        
+        print(node)
+        
+        if node:
+          node.insert(asset)
+          
+        else:
+          root.insert(asset)
+  
+  
+  expand = lambda obj: {
+    "typeID":obj.data.typeID_id, 
+    "typeName":obj.data.typeID.typeName,
+    "flag":obj.data.flag.flagName,
+    "quantity":obj.data.quantity,
+    "childs":[expand(x) for x in obj.childs],
+  }
+  
+  result = {"locationID": root.data, "childs":[expand(x) for x in root.childs]}
+  jsonResponse = JSONResponse(success=True, result=result)
+  response.write(jsonResponse.json())
+  
+  return response
   
   

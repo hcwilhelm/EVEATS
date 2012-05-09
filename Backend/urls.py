@@ -45,7 +45,8 @@ urlpatterns = patterns('',
     url(r'^eve/corporations/$', 'eve.views.corporations'),
     url(r'^eve/characterAssetsByMarketGroup/(?P<charID>\d+)/$', 'eve.views.characterAssetsByMarketGroup'),
     url(r'^eve/characterAssetsByMarketGroup/(?P<charID>\d+)/(?P<marketGroupID>\d+)$', 'eve.views.characterAssetsByMarketGroup'),
-    url(r'^eve/characterAssetsByTypeName/(?P<charID>\d+)/(?P<typeName>\w+)$', 'eve.views.characterAssetsByTypeName'),
+    url(r'^eve/characterAssetsByTypeName/(?P<charID>\d+)/(?P<typeName>[\w\ ]+)$', 'eve.views.characterAssetsByTypeName'),
+    url(r'^eve/characterAssetsDetailTree/(?P<charID>\d+)/(?P<typeID>\d+)/(?P<locationID>\d+)/$', 'eve.views.characterAssetsDetailTree'),
     
     # evedb app
     url(r'^evedb/invType/(?P<typeID>\d+)/$', 'evedb.views.invType'),

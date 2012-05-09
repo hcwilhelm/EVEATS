@@ -19,12 +19,13 @@ baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port
 // = Backend URL's                                                                 =
 // =================================================================================
 
-eveAddAPIKeyURL         = "/eve/addAPIKey/";
-eveRemoveAPIKeyURL      = "/eve/removeAPIKey/;"
-eveAPIKeyURL            = "/eve/apiKeys/";
+eveAddAPIKeyURL             = "/eve/addAPIKey/";
+eveRemoveAPIKeyURL          = "/eve/removeAPIKey/;"
+eveAPIKeyURL                = "/eve/apiKeys/";
 
-eveCharactersURL        = "/eve/characters/";
-eveCorporationsURL      = "/eve/corporations/";
-eveCharacterAssets      = "/eve/characterAssetsByMarketGroup/";
+eveCharactersURL            = "/eve/characters/";
+eveCorporationsURL          = "/eve/corporations/";
+eveCharacterAssetsByGroup   = "/eve/characterAssetsByMarketGroup/";
+eveCharacterAssetsByName    = "/eve/characterAssetsByTypeName/";
 
-eveMarketGroupTreeURL   = "/evedb/invMarketGroupTree/";
+eveMarketGroupTreeURL       = "/evedb/invMarketGroupTree/";

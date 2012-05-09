@@ -478,6 +478,14 @@ def updateAssetList(object_id, type):
               locationID -= 6000001
 
           asset.locationID_id  = locationID
+          
+        else:
+          
+          # ===================================================================
+          # = if there is no location the asset inherits it's parent location =
+          # ===================================================================
+          
+          asset.locationID_id = parent.locationID_id
 
         asset.typeID_id   = element.get("typeID")
         asset.quantity    = element.get("quantity")

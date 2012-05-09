@@ -16,6 +16,7 @@
 {
   @outlet CPView                  navigationView;
     @outlet CPView                navigationFilterView;
+      @outlet CPSearchField       searchField;
     @outlet CPSplitView           navigationSplitView;
       @outlet CPView              navigationDataView;
       @outlet CPView              navigationMetaInfoView;
@@ -71,6 +72,13 @@
   // ==============
   
   [navigationFilterView setBackgroundColor:[CPColor colorWithPatternImage:[[CPImage alloc] initWithContentsOfFile:"./Resources/Backgrounds/background-filter.png"]]];
+  
+  // ===============
+  // = SearchField =
+  // ===============
+  
+  [searchField setTarget:self];
+  [searchField setAction:@selector(getAssetsByName:)];
   
   // =======================
   // = navigationSplitView =
@@ -169,21 +177,13 @@
   [[locationNameColumn headerView] setStringValue:@"Location"];
   [locationNameColumn setWidth: 400];
   
-  var flagColumn = [[CPTableColumn alloc] initWithIdentifier:@"flagColumn"];
-  [[flagColumn headerView] setStringValue:@"Flag"];
-  
   var quantityColumn = [[CPTableColumn alloc] initWithIdentifier:@"quantityColumn"];
   [[quantityColumn headerView] setStringValue:@"Quantity"];
-  
-  var singletonColumn = [[CPTableColumn alloc] initWithIdentifier:@"singletonColumn"];
-  [[singletonColumn headerView] setStringValue:@"Singleton"];
   
   [_assetTableView addTableColumn:iconColumn];
   [_assetTableView addTableColumn:typeNameColumn];
   [_assetTableView addTableColumn:locationNameColumn];
-  [_assetTableView addTableColumn:flagColumn];
   [_assetTableView addTableColumn:quantityColumn];
-  [_assetTableView addTableColumn:singletonColumn];
   
   [_assetScrollView setDocumentView:_assetTableView];
   [assetView addSubview:_assetScrollView];
@@ -288,6 +288,11 @@
   }
 }
 
+-(void) connection:(CPURLConnection)connection didFailWithError:(id)error
+{
+  console.log("Connection error");
+}
+
 // ==================================
 // = TableView DataSource delegates =
 // ==================================
@@ -314,19 +319,9 @@
     return [[_assetData objectForKey:aRowIndex] objectForKey:@"locationName"];
   }
   
-  if ([aColumn identifier] == @"flagColumn")
-  {
-    return [[_assetData objectForKey:aRowIndex] objectForKey:@"flag"];
-  }
-  
   if ([aColumn identifier] == @"quantityColumn")
   {
     return [[_assetData objectForKey:aRowIndex] objectForKey:@"quantity"];
-  }
-  
-  if ([aColumn identifier] == @"singletonColumn")
-  {
-    return [[_assetData objectForKey:aRowIndex] objectForKey:@"singleton"];
   }
 }
 
@@ -385,10 +380,28 @@
 -(void) outlineViewSelectionDidChange:(CPNotification)notification
 {
   var item = [[notification object] itemAtRow:[[notification object] selectedRow]];
-  var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssets + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
+  var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByGroup + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
   
   _assetDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
 }
 
+// ======================
+// = SearchField Action =
+// ======================
+
+-(void) getAssetsByName:(id)sender
+{
+  if ([sender stringValue].match(/\w\s*/) )
+  {
+    var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByName + EVSelectedCharacter.pk + "/" + [sender stringValue]];
+    _assetDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+  }
+  
+  else
+  {
+    return;
+  }
+  
+}
 
 @end

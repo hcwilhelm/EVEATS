@@ -152,11 +152,30 @@ class Asset(models.Model):
   rawQuantity       = models.IntegerField(null=True, blank=True)
   
   def getLocation(self):
+    
     if self.parent != None:
       return self.parent.getLocation()
     
     else:
       return self.locationID.itemName
+      
+  def getPath(self):
+    path = [self]
+    parent = self.parent
+    
+    while(parent):
+      path.append(parent)
+      parent = parent.parent
+      
+    return path
+    
+  def getRoot(self):
+    
+    if self.parent:
+      return self.parent.getRoot()
+    
+    else:
+      return self
 
 # ============================================================================================
 # = Class APIKey. Note !                                                                     =

@@ -180,7 +180,6 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
 {
   EVSelectedCharacter = [sender modelObject];
   [self updateCharToolbarView];
-  console.log(EVSelectedCharacter);
 }
 
 // ===================================
@@ -228,8 +227,6 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   
   if (connection == _charactersConnection)
   {
-    console.log(obj);
-    
     var toolbarItem = nil
     
     // Find the ToolbarItem
@@ -261,8 +258,6 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   
   if (connection == _corporationsConnection)
   {
-    console.log(obj)
-    
     var toolbarItem = nil
     
     // Find the ToolbarItem
@@ -274,9 +269,6 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
         toolbarItem = [_toolbar items][i];
       }
     }
-    
-    
-    
   }
 }
 
