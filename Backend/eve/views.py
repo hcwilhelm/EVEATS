@@ -292,13 +292,9 @@ def characterAssetsDetailTree(request, charID, typeID, locationID):
     for asset in path:
       node = root.find(asset)
       
-      print(node)
-      
       if not node:
         node = root.find(asset.parent)
-        
-        print(node)
-        
+
         if node:
           node.insert(asset)
           
@@ -314,7 +310,7 @@ def characterAssetsDetailTree(request, charID, typeID, locationID):
     "childs":[expand(x) for x in obj.childs],
   }
   
-  result = {"locationID": root.data, "childs":[expand(x) for x in root.childs]}
+  result = [expand(x) for x in root.childs]
   jsonResponse = JSONResponse(success=True, result=result)
   response.write(jsonResponse.json())
   

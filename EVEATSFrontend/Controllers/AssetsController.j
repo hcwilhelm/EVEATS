@@ -161,6 +161,7 @@
   [_assetTableView setCornerView:nil];
   [_assetTableView setRowHeight: 32];
   [_assetTableView setDataSource:self];
+  [_assetTableView setDelegate:self];
 
   var iconColumn = [[CPTableColumn alloc] initWithIdentifier:@"iconColumn"];
   [[iconColumn headerView] setStringValue:@"Icon"];
@@ -187,6 +188,51 @@
   
   [_assetScrollView setDocumentView:_assetTableView];
   [assetView addSubview:_assetScrollView];
+  
+  // =====================
+  // = Asset Detail View =
+  // =====================
+  
+  _assetDetailScrollView = [[CPScrollView alloc] initWithFrame:[asserDetailView bounds]];
+  [_assetDetailScrollView setAutoresizingMask:CPViewHeightSizable | CPViewWidthSizable];
+  [_assetDetailScrollView setAutohidesScrollers:YES];
+  
+  
+  _assetDetailOutlineView = [[CPOutlineView alloc] initWithFrame:[navigationDataView bounds]];
+
+  var iconColumn = [[CPTableColumn alloc] initWithIdentifier:@"iconColumn"];
+  [[iconColumn headerView] setStringValue:@"Icon"];
+  
+  var iconView = [[EVTableColumnIconView alloc] initWithFrame:CPRectMake(0,0,32, 32)];
+  [iconColumn setDataView:iconView];
+  [iconColumn setWidth: 100]
+  
+  var typeNameColumn = [[CPTableColumn alloc] initWithIdentifier:@"typeNameColumn"];
+  [[typeNameColumn headerView] setStringValue:@"TypeName"];
+  [typeNameColumn setWidth: 300]
+  
+  var flagColumn = [[CPTableColumn alloc] initWithIdentifier:@"flagColumn"];
+  [[flagColumn headerView] setStringValue:@"Flag"];
+  
+  var quantityColumn = [[CPTableColumn alloc] initWithIdentifier:@"quantityColumn"];
+  [[quantityColumn headerView] setStringValue:@"Quantity"];
+  
+  [_assetDetailOutlineView setAutoresizingMask:CPViewHeightSizable | CPViewWidthSizable];
+  //[_assetDetailOutlineView setHeaderView:nil];
+  [_assetDetailOutlineView setCornerView:nil];
+  [_assetDetailOutlineView setRowHeight:32];
+  //[_assetDetailOutlineView setColumnAutoresizingStyle:CPTableViewLastColumnOnlyAutoresizingStyle];
+  [_assetDetailOutlineView addTableColumn:iconColumn];
+  [_assetDetailOutlineView addTableColumn:typeNameColumn];
+  [_assetDetailOutlineView addTableColumn:flagColumn];
+  [_assetDetailOutlineView addTableColumn:quantityColumn];
+  [_assetDetailOutlineView setOutlineTableColumn:iconColumn];
+  //[_assetDetailOutlineView setDelegate:self];
+  //[_assetDetailOutlineView setEnabled:NO];
+  
+  
+  [_assetDetailScrollView setDocumentView:_assetDetailOutlineView];
+  [asserDetailView addSubview:_assetDetailScrollView];
   
   // ========================
   // = Import Progress View =
@@ -286,6 +332,21 @@
     }
     
   }
+  
+  if (connection == _assetDetailDataConnection)
+  {
+    json = CPJSObjectCreateWithJSON(data);
+    
+    if (json.success)
+    {
+      _assetDetailData = [CPDictionary dictionaryWithJSObject: json.result recursively:YES];
+      
+      [_assetDetailOutlineView setDataSource:self];
+      [_assetDetailOutlineView reloadData];
+      
+      console.log(_assetDetailData);
+    }
+  }
 }
 
 -(void) connection:(CPURLConnection)connection didFailWithError:(id)error
@@ -331,46 +392,124 @@
 
 -(id) outlineView:(CPOutlineView)outlineView child:(CPInteger)index ofItem:(id)item
 {
-  if (item)
+  if (outlineView == _outlineView)
   {
-    return [[item objectForKey:@"childs"] objectAtIndex:index];
+    if (item)
+    {
+      return [[item objectForKey:@"childs"] objectAtIndex:index];
+    }
+
+    else
+    {
+      return [_treeData objectForKey:index];
+    }
   }
   
-  else
+  if (outlineView == _assetDetailOutlineView)
   {
-    return [_treeData objectForKey:index];
+    if (item)
+    {
+      return [[item objectForKey:@"childs"] objectAtIndex:index];
+    }
+    
+    else
+    {
+      return [_assetDetailData objectForKey:index];
+    }
   }
+  
 } 
 
 -(BOOL) outlineView:(CPOutlineView)outlineView isItemExpandable:(id)item
 {
-  if ([[item objectForKey:@"childs"] count] > 0)
+  if (outlineView == _outlineView)
   {
-    return YES;
+      if ([[item objectForKey:@"childs"] count] > 0)
+      {
+        return YES;
+      }
+
+      else
+      {
+        return NO;
+      }
   }
   
-  else
+  if (outlineView == _assetDetailOutlineView)
   {
-    return NO;
+    if ([[item objectForKey:@"childs"] count] > 0)
+    {
+      return YES;
+    }
+
+    else
+    {
+      return NO;
+    }
   }
-} 
+  
+}
 
 -(int) outlineView:(CPOutlineView)outlineView numberOfChildrenOfItem:(id)item
 {
-  if (item)
+  if (outlineView == _outlineView)
   {
-    return [[item objectForKey:@"childs"] count];
+    if (item)
+    {
+      return [[item objectForKey:@"childs"] count];
+    }
+
+    else
+    {
+      return [_treeData count];
+    }
   }
   
-  else
+  if (outlineView == _assetDetailOutlineView)
   {
-    return [_treeData count];
+    if (item)
+    {
+      return [[item objectForKey:@"childs"] count];
+    }
+
+    else
+    {
+      return [_assetDetailData count];
+    }
   }
+  
 } 
 
 -(id) outlineView:(CPOutlineView)outlineView objectValueForTableColumn:(CPTableColumn)tableColumn byItem:(id)item
 {
-  return item;
+  if (outlineView == _outlineView)
+  {
+    return item;
+  }
+  
+  if (outlineView == _assetDetailOutlineView)
+  {
+    if ([tableColumn identifier] == @"iconColumn")
+    {
+      return [item objectForKey:@"typeID"];
+    }
+    
+    if ([tableColumn identifier] == @"typeNameColumn")
+    {
+      return [item objectForKey:@"typeName"];
+    }
+    
+    if ([tableColumn identifier] == @"flagColumn")
+    {
+      return [item objectForKey:@"flag"];
+    }
+    
+    if ([tableColumn identifier] == @"quantityColumn")
+    {
+      return [item objectForKey:@"quantity"];
+    }
+  }
+ 
 }
 
 // =========================
@@ -379,10 +518,36 @@
 
 -(void) outlineViewSelectionDidChange:(CPNotification)notification
 {
-  var item = [[notification object] itemAtRow:[[notification object] selectedRow]];
-  var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByGroup + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
+  if ([notification object] == _outlineView)
+  {
+    console.log("MarketGroupOutlineView DidChange");
+    
+    var item = [[notification object] itemAtRow:[[notification object] selectedRow]];
+    var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByGroup + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
+
+    _assetDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+  }
+
+}
+
+// =======================
+// = TableView delegates =
+// =======================
+
+-(void) tableViewSelectionDidChange:(CPNotification)notification
+{
   
-  _assetDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+  if ([notification object] == _assetTableView)
+  {
+    console.log("TableView DidChange");
+    
+    var item = [_assetData objectForKey:[[notification object] selectedRow]];
+    
+    var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsDetailTree + EVSelectedCharacter.pk + "/" + [item objectForKey:@"typeID"] + "/" + [item objectForKey:@"locationID"]];
+    _assetDetailDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+  }
+    
+  }
 }
 
 // ======================

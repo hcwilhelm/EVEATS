@@ -35,7 +35,6 @@
     [self setColumnAutoresizingStyle:CPTableViewLastColumnOnlyAutoresizingStyle];
     [self addTableColumn:marketGroupColumn];
     [self setOutlineTableColumn:marketGroupColumn];
-    [self setTarget:self];
   }
   
   return self
