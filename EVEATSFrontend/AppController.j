@@ -179,6 +179,7 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
 -(@action) charChanged:(id)sender
 {
   EVSelectedCharacter = [sender modelObject];
+  [[CPNotificationCenter defaultCenter] postNotificationName:AppControllerCharChanged object:self];
   [self updateCharToolbarView];
 }
 
@@ -195,8 +196,8 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   var request = [CPURLRequest requestWithURL:baseURL + eveAPIKeyURL];
   var data    = [CPURLConnection sendSynchronousRequest:request returningResponse: nil];
   
-  var obj = [data JSONObject]
-  [[DataSourceCache sharedCache] setApiKeys: [CPArray arrayWithObjects: obj.result]];
+  var json = [data JSONObject];
+  [[DataSourceCache sharedCache] setApiKeys: [CPDictionary dictionaryWithJSObject: json.result recursively:YES]];
   
   var request = [CPURLRequest requestWithURL:baseURL + eveCharactersURL];
   _charactersConnection = [CPURLConnection connectionWithRequest:request delegate:self];
@@ -213,7 +214,7 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   var bundle = [CPBundle mainBundle];
   var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
   
-  var request = [CPURLRequest requestWithURL:baseURL + charactersURL];
+  var request = [CPURLRequest requestWithURL:baseURL + eveCharactersURL];
   _charactersConnection = [CPURLConnection connectionWithRequest:request delegate:self];
 }
 
@@ -238,6 +239,8 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
         toolbarItem = [_toolbar items][i];
       }
     }
+    
+    [[toolbarItem view] removeAllItems];
     
     // Add all Characters to the toolbarItem View
     
@@ -348,11 +351,14 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
 
 -(void) updateCharToolbarView
 {
-  [_charImageView removeFromSuperview];
-  [_charImageView setImage:[[ImageCache sharedCache] getImageForObject:EVSelectedCharacter]];
-  
-  var toolbarView = [_toolbar _toolbarView];
-  [toolbarView addSubview:_charImageView];
+  if (EVSelectedCharacter)
+  {
+    [_charImageView removeFromSuperview];
+    [_charImageView setImage:[[ImageCache sharedCache] getImageForObject:EVSelectedCharacter]];
+
+    var toolbarView = [_toolbar _toolbarView];
+    [toolbarView addSubview:_charImageView];
+  }
 }
 
 @end

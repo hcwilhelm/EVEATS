@@ -9,14 +9,8 @@
 
 @import <Foundation/Foundation.j>
 
-// ==============
-// = Used URL's =
-// ==============
-
-var userInfoURL     = "/accounts/info/";
-var apiKeysURL      = "/eveapi/apiKeys/";
-var addAPIKeyURL    = "/eveapi/addAPIKey/";
-var removeAPIKeyURL = "/eveapi/removeAPIKey/"; 
+@import "../Utils/BackendURLS.j"
+@import "../Categories/CPString_phpjs.j"
 
 
 // =================
@@ -52,8 +46,6 @@ UserControllerAPIKeyChanged = @"UserControllerAPIKeyChanged";
   CPURLConnection       _apiKeyConnection;
   CPURLConnection       _addAPIKeyConnection;
   CPURLConnection       _removeAPIKeyConnection;
-  
-  CPObject              _apiKeys;
 }
 
 -(void)awakeFromCib
@@ -70,7 +62,7 @@ UserControllerAPIKeyChanged = @"UserControllerAPIKeyChanged";
   
   var vcodeColumn = [[CPTableColumn alloc] initWithIdentifier:"vCode"];
   [[vcodeColumn headerView] setStringValue:"Verification Code"];
-  [vcodeColumn setWidth:400];
+  [vcodeColumn setWidth:600];
   
   var nameColumn = [[CPTableColumn alloc] initWithIdentifier:"name"];
   [[nameColumn headerView] setStringValue:"Name"];
@@ -109,9 +101,6 @@ UserControllerAPIKeyChanged = @"UserControllerAPIKeyChanged";
   // ===================
   // = Query user info =
   // ===================
-  
-  var bundle = [CPBundle mainBundle];
-  var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
    
   var request = [CPURLRequest requestWithURL:baseURL + userInfoURL];
   _userInfoConnection = [CPURLConnection connectionWithRequest:request delegate:self];
@@ -125,32 +114,37 @@ UserControllerAPIKeyChanged = @"UserControllerAPIKeyChanged";
 
 -(@action) removeKey:(id)sender
 {
-  console.log([apiKeyTableView selectedRow]);
-  
   if ([apiKeyTableView selectedRow] > -1)
   {
-    var bundle = [CPBundle mainBundle];
-    var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
-
-    var GET  = "?keyID="  + _apiKeys[[apiKeyTableView selectedRow]]['pk'];
+    var key = [[[DataSourceCache sharedCache] apiKeys] objectForKey: [apiKeyTableView selectedRow]];
     
-    var request = [CPURLRequest requestWithURL:baseURL + removeAPIKeyURL + GET];
+    var content = [[CPString alloc] initWithFormat:@"keyID=%d", [key objectForKey:@"pk"]];
+    
+    var request = [CPURLRequest requestWithURL:baseURL + eveRemoveAPIKeyURL];
+    [request setHTTPMethod:@"POST"];
+    [request setHTTPBody:content];
+    [request setValue:"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"]; 
+    [request setValue:[[[CPCookie alloc] initWithName:@"csrftoken"] value] forHTTPHeaderField:@"X-CSRFToken"];
+    
     _removeAPIKeyConnection = [CPURLConnection connectionWithRequest:request delegate:self];
   }
 }
 
 -(@action) addKey:(id)sender
 {
-  var bundle = [CPBundle mainBundle];
-  var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
+  var keyID   = [keyIDTextField stringValue];
+  var vCode   = [vCodeTextField stringValue];
+  var name    = [nameTextField stringValue];
   
-  var GET  = "?keyID="  + [keyIDTextField stringValue];
-      GET += "&vCode="  + [vCodeTextField stringValue];
-      GET += "&name="   + [nameTextField stringValue];
-
-  var request = [CPURLRequest requestWithURL:baseURL + addAPIKeyURL + GET];
+  var content = [[CPString alloc] initWithFormat:@"keyID=%@&vCode=%@&name=%@", [keyID urlencode], [vCode urlencode], [name urlencode]];
+  
+  var request = [CPURLRequest requestWithURL:baseURL + eveAddAPIKeyURL];
+  [request setHTTPMethod:@"POST"];
+  [request setHTTPBody:content];
+  [request setValue:"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"]; 
+  [request setValue:[[[CPCookie alloc] initWithName:@"csrftoken"] value] forHTTPHeaderField:@"X-CSRFToken"]; 
+  
   _addAPIKeyConnection = [CPURLConnection connectionWithRequest:request delegate:self];
-
   [addAPIKeyPopover close];
 }
 
@@ -159,83 +153,80 @@ UserControllerAPIKeyChanged = @"UserControllerAPIKeyChanged";
   [addAPIKeyPopover close];
 }
 
+// =============================
+// = CPURLConnection delegate  =
+// =============================
+
 -(void) connection:(CPURLConnection)connection didReceiveData:(CPString)data
 {
-  var result = CPJSObjectCreateWithJSON(data);
+  
+  var json = CPJSObjectCreateWithJSON(data);
   
   if (connection == _userInfoConnection)
   {
-    [usernameTextField setStringValue:result[0].fields.username];
-    [emailTextField setStringValue:result[0].fields.email];
+    [usernameTextField setStringValue:json[0].fields.username];
+    [emailTextField setStringValue:json[0].fields.email];
   }
   
   if (connection == _apiKeyConnection)
   {
-    _apiKeys = result;
-    [apiKeyTableView reloadData];
+    [[DataSourceCache sharedCache] setApiKeys: [CPDictionary dictionaryWithJSObject: json.result recursively:YES]];
     
+    [apiKeyTableView reloadData];
     [[CPNotificationCenter defaultCenter] postNotificationName:UserControllerAPIKeyChanged object:self];
   }
   
   if (connection == _addAPIKeyConnection)
   {
-    if (result["success"] == YES)
+    if (json["success"] == YES)
     {
-      _apiKeys = nil;
-      [apiKeyTableView reloadData];
+      var request = [CPURLRequest requestWithURL:baseURL + eveAPIKeyURL];
+      _apiKeyConnection = [CPURLConnection connectionWithRequest:request delegate:self];
     }
   }
   
   if (connection == _removeAPIKeyConnection)
   { 
-    if (result["success"] == YES)
+    if (json["success"] == YES)
     {
-      _apiKeys = nil;
-      [apiKeyTableView reloadData];
+      var request = [CPURLRequest requestWithURL:baseURL + eveAPIKeyURL];
+      _apiKeyConnection = [CPURLConnection connectionWithRequest:request delegate:self];
     }
     
   }
 }
 
+// =========================
+// = CPTableView delegates =
+// =========================
+
 -(int) numberOfRowsInTableView:(CPTableView)aTableView
 {
-  if (_apiKeys == nil)
-  {
-    var bundle = [CPBundle mainBundle];
-    var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
-    
-    var request = [CPURLRequest requestWithURL:baseURL + apiKeysURL];
-    _apiKeyConnection = [CPURLConnection connectionWithRequest:request delegate:self];
-    
-    return 0;
-  }
-  
-  else
-  {
-    return _apiKeys.length;
-  }
+  return [[[DataSourceCache sharedCache] apiKeys] count];
 }
 
 -(id) tableView:(CPTableView)aTableView objectValueForTableColumn:(CPTableColumn)aTableColumn row:(int)rowIndex
 {
+    var apiKeys = [[DataSourceCache sharedCache] apiKeys];
+  
     if ([aTableColumn identifier] == "keyID")
     {
-      return _apiKeys[rowIndex].fields['keyID'];
+      return [[[apiKeys objectForKey:rowIndex] objectForKey:@"fields"] objectForKey:@"keyID"];
     }
     
     if ([aTableColumn identifier] == "vCode")
     {
-      return _apiKeys[rowIndex].fields['vCode'];
+      return [[[apiKeys objectForKey:rowIndex] objectForKey:@"fields"] objectForKey:@"vCode"];
     }
     
     if ([aTableColumn identifier] == "name")
     {
-      return _apiKeys[rowIndex].fields['name'];
+      return [[[apiKeys objectForKey:rowIndex] objectForKey:@"fields"] objectForKey:@"name"];
     }
     
     if ([aTableColumn identifier] == "isValid")
     {
-      return _apiKeys[rowIndex].fields['valid'];
+      return [[[apiKeys objectForKey:rowIndex] objectForKey:@"fields"] objectForKey:@"valid"];
     }
 }
 

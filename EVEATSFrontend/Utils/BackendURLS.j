@@ -19,8 +19,10 @@ baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port
 // = Backend URL's                                                                 =
 // =================================================================================
 
+userInfoURL                   = "/accounts/info/";
+
 eveAddAPIKeyURL               = "/eve/addAPIKey/";
-eveRemoveAPIKeyURL            = "/eve/removeAPIKey/;"
+eveRemoveAPIKeyURL            = "/eve/removeAPIKey/";
 eveAPIKeyURL                  = "/eve/apiKeys/";
 
 eveCharactersURL              = "/eve/characters/";

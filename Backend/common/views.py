@@ -6,12 +6,18 @@ from django.http                    import HttpResponse
 from django.core                    import serializers
 from django.utils                   import simplejson
 from django.db.models.query         import QuerySet
+from django.db.models.query         import EmptyQuerySet
 from django.core.serializers.json   import DjangoJSONEncoder
 
 class HandleQuerySets(DjangoJSONEncoder):
   def default(self, obj):
+    
     if type(obj) == QuerySet:
       return serializers.serialize("python", obj, ensure_ascii=False)
+    
+    if type(obj) == EmptyQuerySet:
+      return serializers.serialize("python", obj, ensure_ascii=False)
+    
     return DjangoJSONEncoder.default(self, obj)
 
 #

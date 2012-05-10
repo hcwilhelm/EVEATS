@@ -11,7 +11,7 @@ from common.views import JSONResponse
 from eve.models import *
 from eve.tasks import *
 
-from django.db.models import Avg, Max, Min, Count
+from django.db.models import Avg, Max, Min, Count, Sum
 from django.contrib.auth.models import User
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
@@ -27,6 +27,8 @@ from celery.task.sets import TaskSet
 @login_required(login_url="/common/authentificationError")
 def addAPIKey(request):
   response = HttpResponse(mimetype="application/json")
+  
+  print request.body
 
   keyID = request.POST["keyID"]
   vCode = request.POST["vCode"]
@@ -47,7 +49,7 @@ def addAPIKey(request):
 def removeAPIKey(request):
   response = HttpResponse(mimetype="application/json")
 
-  keyID = response.POST["keyID"]
+  keyID = request.POST["keyID"]
   APIKey.objects.filter(pk=keyID).delete()
 
   jsonResponse = JSONResponse(success=True)
@@ -212,14 +214,14 @@ def characterAssetsByMarketGroup(request, charID, marketGroupID=None):
   }
   
   if marketGroupID == None:
-    assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).values('typeID','locationID').annotate(total = Count('quantity')).order_by('-total')
+    assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).values('typeID','locationID').annotate(total = Sum('quantity')).order_by('-total')
     
     result = [expand(x) for x in assets]
     jsonResponse = JSONResponse(success=True, result=result)
     response.write(jsonResponse.json())
   
   else:
-    assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).values('typeID','locationID').annotate(total = Count('quantity')).order_by('-total')
+    assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).values('typeID','locationID').annotate(total = Sum('quantity')).order_by('-total')
     
     result = [expand(x) for x in assets]
     jsonResponse = JSONResponse(success=True, result=result)
@@ -242,7 +244,7 @@ def characterAssetsByTypeName(request, charID, typeName=""):
     "quantity":obj['total'],
   }
   
-  assets = char.assetList.asset_set.filter(typeID__typeName__icontains = typeName).values('typeID','locationID').annotate(total = Count('quantity')).order_by('-total')[:10]
+  assets = char.assetList.asset_set.filter(typeID__typeName__icontains = typeName).values('typeID','locationID').annotate(total = Sum('quantity')).order_by('-total')[:10]
   
   result = [expand(x) for x in assets]
   jsonResponse = JSONResponse(success=True, result=result)
@@ -255,24 +257,44 @@ def characterAssetsByTypeName(request, charID, typeName=""):
 # = Tree Class, helper to build the Assets DetailView =
 # =====================================================  
 
-class Node:
+class Node(object):
+  
   def __init__(self, data="root"):
     self.data     = data
+    self.quantity = 0
     self.childs   = []
+  
+  def generateQuantity(self):
+    
+    if len(self.childs) == 0:
+      self.quantity = self.data.quantity
+      return self.quantity
+    
+    else:
+      for child in self.childs:
+        self.quantity += child.generateQuantity()
+      
+      return self.quantity
     
   def insert(self, data):
     self.childs.append(Node(data))
     
-  def find(self, data):
+  def find(self, data, stack=[]):
     
     if self.data == data:
       return self
     
     else:
-      for child in self.childs:
-        return child.find(data)
+      stack.extend(self.childs)
+      
+      while len(stack) > 0:
+        node = stack.pop()
+        result = node.find(data, stack)
+        
+        if result:
+          return result
     
-    return None
+    
   
   
 @login_required(login_url="/common/authentificationError")
@@ -293,20 +315,23 @@ def characterAssetsDetailTree(request, charID, typeID, locationID):
       node = root.find(asset)
       
       if not node:
+        
         node = root.find(asset.parent)
-
+        
         if node:
           node.insert(asset)
-          
+        
         else:
           root.insert(asset)
   
+  root.generateQuantity()
   
   expand = lambda obj: {
+    "ID":obj.data.pk,
     "typeID":obj.data.typeID_id, 
     "typeName":obj.data.typeID.typeName,
     "flag":obj.data.flag.flagName,
-    "quantity":obj.data.quantity,
+    "quantity":obj.quantity,
     "childs":[expand(x) for x in obj.childs],
   }
   

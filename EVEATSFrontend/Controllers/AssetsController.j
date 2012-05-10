@@ -12,6 +12,14 @@
 @import "../Views/EVMarketGroupOutlineView.j"
 @import "../Views/EVTableColumnIconView.j"
 
+
+// =================
+// = Notifications =
+// =================
+
+AppControllerCharChanged = @"AppControllerCharChanged";
+
+
 @implementation AssetsController : CPViewController
 {
   @outlet CPView                  navigationView;
@@ -55,8 +63,6 @@
 
 -(void)awakeFromCib
 {
-  console.log("AssetsController awakeformCIB");
-  
   // =================
   // = splitViewMain =
   // =================
@@ -158,7 +164,7 @@
   _assetTableView = [[CPTableView alloc] initWithFrame:[assetView bounds]];
   [_assetTableView setAutoresizingMask:CPViewHeightSizable | CPViewWidthSizable];
   [_assetTableView setUsesAlternatingRowBackgroundColors:YES]
-  [_assetTableView setCornerView:nil];
+  [_assetTableView setColumnAutoresizingStyle:CPTableViewLastColumnOnlyAutoresizingStyle];
   [_assetTableView setRowHeight: 32];
   [_assetTableView setDataSource:self];
   [_assetTableView setDelegate:self];
@@ -218,17 +224,14 @@
   [[quantityColumn headerView] setStringValue:@"Quantity"];
   
   [_assetDetailOutlineView setAutoresizingMask:CPViewHeightSizable | CPViewWidthSizable];
-  //[_assetDetailOutlineView setHeaderView:nil];
-  [_assetDetailOutlineView setCornerView:nil];
   [_assetDetailOutlineView setRowHeight:32];
-  //[_assetDetailOutlineView setColumnAutoresizingStyle:CPTableViewLastColumnOnlyAutoresizingStyle];
+  [_assetDetailOutlineView setColumnAutoresizingStyle:CPTableViewLastColumnOnlyAutoresizingStyle];
   [_assetDetailOutlineView addTableColumn:iconColumn];
   [_assetDetailOutlineView addTableColumn:typeNameColumn];
   [_assetDetailOutlineView addTableColumn:flagColumn];
   [_assetDetailOutlineView addTableColumn:quantityColumn];
   [_assetDetailOutlineView setOutlineTableColumn:iconColumn];
-  //[_assetDetailOutlineView setDelegate:self];
-  //[_assetDetailOutlineView setEnabled:NO];
+  [_assetDetailOutlineView setDataSource:self];
   
   
   [_assetDetailScrollView setDocumentView:_assetDetailOutlineView];
@@ -250,12 +253,32 @@
   // =============================
   
   [self loadTreeData]
+  
+  // ========================
+  // = Register as Observer =
+  // ========================
+  
+  [[CPNotificationCenter defaultCenter] 
+    addObserver:self
+    selector:@selector(appControllerCharChanged:)
+    name:AppControllerCharChanged
+    object:nil];
 }
 
 -(void) loadTreeData
 {
   var request         = [CPURLRequest requestWithURL:baseURL + eveMarketGroupTreeURL];
   _treeDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+}
+
+-(void) appControllerCharChanged:(id)sender
+{
+  _assetData        = [[CPDictionary alloc] init];
+  _assetDetailData  = [[CPDictionary alloc] init];
+  
+  [_assetTableView reloadData];
+  [_assetDetailOutlineView reloadData];
+  [searchField setStringValue:@""];
 }
 
 -(@action) toggleMetaInfoView:(id)sender
@@ -340,11 +363,7 @@
     if (json.success)
     {
       _assetDetailData = [CPDictionary dictionaryWithJSObject: json.result recursively:YES];
-      
-      [_assetDetailOutlineView setDataSource:self];
       [_assetDetailOutlineView reloadData];
-      
-      console.log(_assetDetailData);
     }
   }
 }
@@ -520,8 +539,6 @@
 {
   if ([notification object] == _outlineView)
   {
-    console.log("MarketGroupOutlineView DidChange");
-    
     var item = [[notification object] itemAtRow:[[notification object] selectedRow]];
     var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByGroup + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
 
@@ -539,15 +556,15 @@
   
   if ([notification object] == _assetTableView)
   {
-    console.log("TableView DidChange");
-    
     var item = [_assetData objectForKey:[[notification object] selectedRow]];
     
-    var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsDetailTree + EVSelectedCharacter.pk + "/" + [item objectForKey:@"typeID"] + "/" + [item objectForKey:@"locationID"]];
-    _assetDetailDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+    if ([item objectForKey:@"typeID"])
+    {
+      var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsDetailTree + EVSelectedCharacter.pk + "/" + [item objectForKey:@"typeID"] + "/" + [item objectForKey:@"locationID"]];
+      _assetDetailDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+    }
   }
     
-  }
 }
 
 // ======================

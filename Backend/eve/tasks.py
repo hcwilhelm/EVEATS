@@ -274,9 +274,12 @@ def updateAPIKey(apiKey_id):
   params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode})
   xml     = getXMLFromEveAPI(action, params)
 
+  #print etree.tostring(xml)
+  
   if xml.find("error") != None:
     apiKey.valid        = False
     apiKey.cachedUntil  = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
+    apiKey.save()
 
   else:
     xml_current = xml.find("currentTime")

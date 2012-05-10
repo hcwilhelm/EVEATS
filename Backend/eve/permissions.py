@@ -18,7 +18,7 @@ class CharacterAssetListPermissionHandler(PermissionHandler):
     
     if perm == 'eve.viewAssetList_character':
       for key in obj.apiKeys.all():
-        if user_obj.apiKey == key:
+        if key.user == user_obj:
           user_has_permission = True
     
     return user_has_permission

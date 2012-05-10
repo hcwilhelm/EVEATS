@@ -9,27 +9,17 @@
 
 @import <Foundation/Foundation.j>
 
-// =========
-// = URL's =
-// =========
-
-var apiKeysURL = "/eve/apiKeys/";
-
 // =============
 // = Singleton =
 // =============
 
 DSCache = nil;
 
-// ====================
-// = Class ImageCache =
-// ====================
-
 @implementation DataSourceCache : CPObject
 {
-  CPArray _apiKeys @accessors(property=apiKeys);
-  CPArray _characters @accessors(property=characters);
-  CPArray _corporations @accessors(property=corporations);
+  CPDictionary _apiKeys @accessors(property=apiKeys);
+  CPDictionary _characters @accessors(property=characters);
+  CPDictionary _corporations @accessors(property=corporations);
 }
 
 +(DataSourceCache)sharedCache
@@ -55,4 +45,4 @@ DSCache = nil;
   return self;
 }
 
-
+@end
