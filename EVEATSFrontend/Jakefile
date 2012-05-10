@@ -6,6 +6,15 @@
  * Copyright 2012, Your Company All rights reserved.
  */
 
+ /* enter the following information about you and your module */
+ var AUTHOR      = "Hans Christian Wilhelm",
+     EMAIL       = "hcwilhelm@mac.com",
+     COMPANY     = "scienceondope.org",
+     NAME        = "EVEATS",
+     SUMMARY     = "The next-gen Eve Online assets viewer",
+     VERSION     = "1.0";
+
+
 var ENV = require("system").env,
     FILE = require("file"),
     JAKE = require("jake"),
@@ -15,22 +24,21 @@ var ENV = require("system").env,
     configuration = ENV["CONFIG"] || ENV["CONFIGURATION"] || ENV["c"] || "Debug",
     OS = require("os");
 
-app ("testApp", function(task)
+app ("EVEATS", function(task)
 {
-    task.setBuildIntermediatesPath(FILE.join("Build", "testApp.build", configuration));
+    task.setBuildIntermediatesPath(FILE.join("Build", NAME + ".build", configuration));
     task.setBuildPath(FILE.join("Build", configuration));
 
-    task.setProductName("testApp");
-    task.setIdentifier("com.yourcompany.testApp");
-    task.setVersion("1.0");
-    task.setAuthor("Your Company");
-    task.setEmail("feedback @nospam@ yourcompany.com");
-    task.setSummary("testApp");
-    task.setSources((new FileList("**/*.j")).exclude(FILE.join("Build", "**")));
-    task.setResources(new FileList("Resources/**"));
-    task.setIndexFilePath("index.html");
+    task.setPreventsNib2Cib(true);
+    task.setProductName(NAME);
+    task.setIdentifier( COMPANY + "." + NAME);
+    task.setVersion(VERSION);
+    task.setAuthor(AUTHOR);
+    task.setEmail(EMAIL);
+    task.setSummary(SUMMARY);
+    task.setSources(new FileList("*.j", "Controllers/*.j", "Views/*.j", "Categories/*.j", "Utils/*.j"));
+    task.setResources(new FileList("Resources/**/**"));
     task.setInfoPlistPath("Info.plist");
-    task.setNib2CibFlags("-R Resources/");
 
     if (configuration === "Debug")
         task.setCompilerFlags("-DDEBUG -g");
@@ -38,12 +46,11 @@ app ("testApp", function(task)
         task.setCompilerFlags("-O");
 });
 
-task ("default", ["testApp"], function()
+
+task ("build", ["EVEATS"], function()
 {
     printResults(configuration);
 });
-
-task ("build", ["default"]);
 
 task ("debug", function()
 {
@@ -59,36 +66,36 @@ task ("release", function()
 
 task ("run", ["debug"], function()
 {
-    OS.system(["open", FILE.join("Build", "Debug", "testApp", "index.html")]);
+    OS.system(["open", FILE.join("Build", "Debug", "EVEATS", "index.html")]);
 });
 
 task ("run-release", ["release"], function()
 {
-    OS.system(["open", FILE.join("Build", "Release", "testApp", "index.html")]);
+    OS.system(["open", FILE.join("Build", "Release", "EVEATS", "index.html")]);
 });
 
 task ("deploy", ["release"], function()
 {
-    FILE.mkdirs(FILE.join("Build", "Deployment", "testApp"));
-    OS.system(["press", "-f", FILE.join("Build", "Release", "testApp"), FILE.join("Build", "Deployment", "testApp")]);
+    FILE.mkdirs(FILE.join("Build", "Deployment", "EVEATS"));
+    OS.system(["press", "-f", FILE.join("Build", "Release", "EVEATS"), FILE.join("Build", "Deployment", "EVEATS")]);
     printResults("Deployment")
 });
 
 task ("desktop", ["release"], function()
 {
-    FILE.mkdirs(FILE.join("Build", "Desktop", "testApp"));
-    require("cappuccino/nativehost").buildNativeHost(FILE.join("Build", "Release", "testApp"), FILE.join("Build", "Desktop", "testApp", "testApp.app"));
+    FILE.mkdirs(FILE.join("Build", "Desktop", "EVEATS"));
+    require("cappuccino/nativehost").buildNativeHost(FILE.join("Build", "Release", "EVEATS"), FILE.join("Build", "Desktop", "EVEATS", "EVEATS.app"));
     printResults("Desktop")
 });
 
 task ("run-desktop", ["desktop"], function()
 {
-    OS.system([FILE.join("Build", "Desktop", "testApp", "testApp.app", "Contents", "MacOS", "NativeHost"), "-i"]);
+    OS.system([FILE.join("Build", "Desktop", "EVEATS", "EVEATS.app", "Contents", "MacOS", "NativeHost"), "-i"]);
 });
 
 function printResults(configuration)
 {
     print("----------------------------");
-    print(configuration+" app built at path: "+FILE.join("Build", configuration, "testApp"));
+    print(configuration+" app built at path: "+FILE.join("Build", configuration, "EVEATS"));
     print("----------------------------");
 }
