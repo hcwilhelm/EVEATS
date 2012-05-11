@@ -18,3 +18,8 @@ settings.py
 ##############
 celerybeat-schedule
 celerybeat.pid
+
+# EVE Static image dump#
+########################
+EVEATSFrontend/Resources/EveImageDump/**/*
+
