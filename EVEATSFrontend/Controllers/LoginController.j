@@ -39,6 +39,8 @@ LoginControllerLoginSuccessful = @"LoginControllerLoginSuccessful";
   @outlet CPTextField   loginPasswordTextField;
   @outlet CPButton      loginButton;
   
+  @outlet CPButton      postTestButton;
+  
   @outlet CPTextField   messageTextField;
   
   CPImage               _eveIcon;
@@ -80,8 +82,33 @@ LoginControllerLoginSuccessful = @"LoginControllerLoginSuccessful";
   _registerConnection = [CPURLConnection connectionWithRequest:request delegate:self];
 }
 
+-(@action) sendPOST:(id)sender
+{
+  console.log("send POST");
+  
+  var bundle = [CPBundle mainBundle];
+  var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
+  
+  var p1 = @"Hello";
+  var p2 = @"World";
+
+  var content = [[CPString alloc] initWithFormat:@"p1=%@&p2=%@", p1, p2];
+
+  var request = [[CPURLRequest alloc] initWithURL:baseURL + "/common/httpPostTest/"]; 
+  [request setHTTPMethod:@"POST"]; 
+  [request setHTTPBody:content]; 
+  [request setValue:"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+
+  var cookie1 = [[CPCookie alloc] initWithName:@"csrftoken"];
+  [request setValue:[cookie1 value] forHTTPHeaderField:@"X-CSRFToken"];
+  
+  var connection = [CPURLConnection connectionWithRequest:request delegate:self];
+}
+
 -(void)connection:(CPURLConnection)connection didReceiveData:(CPString)data
 {
+  console.log(data);
+  
   var result = CPJSObjectCreateWithJSON(data);
   
   console.log(result);

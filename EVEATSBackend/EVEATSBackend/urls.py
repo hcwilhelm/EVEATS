@@ -57,6 +57,7 @@ urlpatterns = patterns('',
     url(r'^common/authentificationError/$', 'common.views.authentificationError'),
     url(r'^common/permissionError/$', 'common.views.permissionError'),
     url(r'^common/exeptionRaised/$', 'common.views.exeptionRaised'),
+    url(r'^common/httpPostTest/$', 'common.views.httpPostTest'),
     
     # djcelery
     url(r'^tasks/', include('djcelery.urls')),

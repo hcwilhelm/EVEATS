@@ -8,6 +8,9 @@ from django.core.validators import email_re
 
 from django.views.decorators.cache import never_cache
 
+from django.core.context_processors import csrf
+from django.views.decorators.csrf import ensure_csrf_cookie
+
 # =======================
 # = ErrorMessage Object =
 # =======================
@@ -24,7 +27,8 @@ class ErrorMessage(object):
 # = login view =
 # ==============
 
-@never_cache        
+@never_cache
+@ensure_csrf_cookie
 def login(request):
     response = HttpResponse(mimetype='application/json')
     

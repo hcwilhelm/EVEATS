@@ -46,3 +46,13 @@ def authentificationError(request):
   response.write(jsonResponse.json())
 
   return response
+
+def httpPostTest(request):
+  response = HttpResponse(mimetype="application/json")
+  
+  result = {"p1":request.POST["p1"], "p2":request.POST["p2"]}
+  
+  jsonResponse = JSONResponse(success=True, result=result)
+  response.write(jsonResponse.json())
+
+  return response

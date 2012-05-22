@@ -10,8 +10,10 @@
     IBOutlet NSTextField* loginUsernameTextField;
     IBOutlet NSTextField* loginPasswordTextField;
     IBOutlet NSButton* loginButton;
+    IBOutlet NSButton* postTestButton;
     IBOutlet NSTextField* messageTextField;
 }
 - (IBAction)login:(id)aSender;
 - (IBAction)register:(id)aSender;
+- (IBAction)sendPOST:(id)aSender;
 @end
