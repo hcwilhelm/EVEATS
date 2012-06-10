@@ -34,6 +34,10 @@ AppControllerCharChanged = @"AppControllerCharChanged";
     @outlet CPSplitView           contentSplitView;
       @outlet CPView              assetView;
       @outlet CPView              asserDetailView;
+      
+  @outlet CPView                  progressView;
+    @outlet CPView                progressIndicator;
+    @outlet CPTextField           progressTextField;
   
   CPScrollView                    _outlineScrollView;
   EVMarketGroupOutlineView        _outlineView;
@@ -43,8 +47,6 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   
   CPScrollView                    _assetDetailScrollView;
   CPOutlineView                   _assetDetailOutlineView;
-  
-  CPProgressIndicator             _assetProgressIndicator;
   
   CPButton                        _hideButton;
   CPImage                         _hideButtonImageDisable;
@@ -193,7 +195,8 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   [_assetTableView addTableColumn:quantityColumn];
   
   [_assetScrollView setDocumentView:_assetTableView];
-  [assetView addSubview:_assetScrollView];
+  
+  [assetView replaceSubview:progressView with:_assetScrollView];
   
   // =====================
   // = Asset Detail View =
@@ -202,7 +205,6 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   _assetDetailScrollView = [[CPScrollView alloc] initWithFrame:[asserDetailView bounds]];
   [_assetDetailScrollView setAutoresizingMask:CPViewHeightSizable | CPViewWidthSizable];
   [_assetDetailScrollView setAutohidesScrollers:YES];
-  
   
   _assetDetailOutlineView = [[CPOutlineView alloc] initWithFrame:[navigationDataView bounds]];
 
@@ -233,7 +235,6 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   [_assetDetailOutlineView setOutlineTableColumn:iconColumn];
   [_assetDetailOutlineView setDataSource:self];
   
-  
   [_assetDetailScrollView setDocumentView:_assetDetailOutlineView];
   [asserDetailView addSubview:_assetDetailScrollView];
   
@@ -241,12 +242,11 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   // = Import Progress View =
   // ========================
 
-  _assetProgressIndicator = [[CPProgressIndicator alloc] initWithFrame:CGRectMakeZero()];
-  [_assetProgressIndicator setStyle:CPProgressIndicatorSpinningStyle];
-  [_assetProgressIndicator sizeToFit];
-  [_assetProgressIndicator setAutoresizingMask:CPViewMinXMargin | CPViewMaxXMargin | CPViewMinYMargin | CPViewMaxYMargin];
-  [_assetProgressIndicator setFrameOrigin:CGPointMake((CGRectGetWidth([assetView bounds]) - [_assetProgressIndicator frame].size.width) / 2.0, (CGRectGetHeight([assetView bounds]) - [_assetProgressIndicator frame].size.height) / 2.0)];
+  var progress = [[CPProgressIndicator alloc] initWithFrame:CGRectMakeZero()];
+  [progress setStyle:CPProgressIndicatorSpinningStyle];
+  [progress sizeToFit];
   
+  [progressIndicator addSubview: progress];
   
   // =============================
   // = Load the MarketGroup Tree =
@@ -330,8 +330,8 @@ AppControllerCharChanged = @"AppControllerCharChanged";
         var request             = [CPURLRequest requestWithURL:baseURL + "/tasks/" + json.taskID + "/status"];
         _taskProgressConnection = [CPURLConnection connectionWithRequest:request delegate:self];
         
-        [_assetProgressIndicator setFrameOrigin:CGPointMake((CGRectGetWidth([assetView bounds]) - [_assetProgressIndicator frame].size.width) / 2.0, (CGRectGetHeight([assetView bounds]) - [_assetProgressIndicator frame].size.height) / 2.0)];
-        [assetView replaceSubview:_assetScrollView with:_assetProgressIndicator];
+        [progressTextField setStringValue:@"Pending"]
+        [assetView replaceSubview:_assetScrollView with:progressView];
       }
     }
   }
@@ -340,18 +340,31 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   {
     json = CPJSObjectCreateWithJSON(data);
     
+    console.log(json);
+    
     if (json.task.status == "PENDING")
     {
-      var request             = [CPURLRequest requestWithURL:baseURL + "/tasks/" + json.task.id + "/status"];
+      var request = [CPURLRequest requestWithURL:baseURL + "/tasks/" + json.task.id + "/status"];
       
       window.setTimeout(function() { 
           _taskProgressConnection = [CPURLConnection connectionWithRequest:request delegate:self];
-        }, 500);
+        }, 100);
     }
     
-    else 
+    if (json.task.status == "PROGRESS")
     {
-      [assetView replaceSubview:_assetProgressIndicator with:_assetScrollView];
+      [progressTextField setStringValue:@"Progress " + json.task.result.current + " / " + json.task.result.total];
+      
+      var request = [CPURLRequest requestWithURL:baseURL + "/tasks/" + json.task.id + "/status"];
+      
+      window.setTimeout(function() { 
+          _taskProgressConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+        }, 100);
+    }
+    
+    if (json.task.status == "SUCCESS")
+    {
+      [assetView replaceSubview:progressView with:_assetScrollView];
     }
     
   }
@@ -540,8 +553,19 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   if ([notification object] == _outlineView)
   {
     var item = [[notification object] itemAtRow:[[notification object] selectedRow]];
-    var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByGroup + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
+    
+    var request = nil;
+    
+    if (EVSelectedCharacter.model == @"eve.character")
+    {
+      request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByGroup + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
+    }
 
+    if (EVSelectedCharacter.model == @"eve.corporation")
+    {
+      request = [CPURLRequest requestWithURL:baseURL + eveCorporationAssetsByGroup + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
+    }
+    
     _assetDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
   }
 
@@ -560,7 +584,18 @@ AppControllerCharChanged = @"AppControllerCharChanged";
     
     if ([item objectForKey:@"typeID"])
     {
-      var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsDetailTree + EVSelectedCharacter.pk + "/" + [item objectForKey:@"typeID"] + "/" + [item objectForKey:@"locationID"]];
+      var request = nil; //[CPURLRequest requestWithURL:baseURL + eveCharacterAssetsDetailTree + EVSelectedCharacter.pk + "/" + [item objectForKey:@"typeID"] + "/" + [item objectForKey:@"locationID"]];
+      
+      if (EVSelectedCharacter.model == @"eve.character")
+      {
+        request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsDetailTree + EVSelectedCharacter.pk + "/" + [item objectForKey:@"typeID"] + "/" + [item objectForKey:@"locationID"]];
+      }
+
+      if (EVSelectedCharacter.model == @"eve.corporation")
+      {
+        request = [CPURLRequest requestWithURL:baseURL + eveCorporationAssetsDetailTree + EVSelectedCharacter.pk + "/" + [item objectForKey:@"typeID"] + "/" + [item objectForKey:@"locationID"]];
+      }
+      
       _assetDetailDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
     }
   }
@@ -575,7 +610,18 @@ AppControllerCharChanged = @"AppControllerCharChanged";
 {
   if ([sender stringValue].match(/\w\s*/) )
   {
-    var request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByName + EVSelectedCharacter.pk + "/" + [sender stringValue]];
+    var request = nil; //[CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByName + EVSelectedCharacter.pk + "/" + [sender stringValue]];
+    
+    if (EVSelectedCharacter.model == @"eve.character")
+    {
+      request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByName + EVSelectedCharacter.pk + "/" + [sender stringValue]];
+    }
+
+    if (EVSelectedCharacter.model == @"eve.corporation")
+    {
+      request = [CPURLRequest requestWithURL:baseURL + eveCorporationAssetsByName + EVSelectedCharacter.pk + "/" + [sender stringValue]];
+    }
+    
     _assetDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
   }
   

@@ -211,11 +211,18 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
 
 -(void) APIKeyChangedNotificationPosted:(id)sender
 {
-  var bundle = [CPBundle mainBundle];
-  var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
+  
+  //
+  // Clear all Items in the Char/Corp SelectorView
+  //
+  
+  [[[self getCharSelectorToolbarItem] view] removeAllItems];
   
   var request = [CPURLRequest requestWithURL:baseURL + eveCharactersURL];
   _charactersConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+  
+  var request = [CPURLRequest requestWithURL:baseURL + eveCorporationsURL];
+  _corporationsConnection = [CPURLConnection connectionWithRequest:request delegate:self];
 }
 
 // =============================
@@ -228,19 +235,7 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   
   if (connection == _charactersConnection)
   {
-    var toolbarItem = nil
-    
-    // Find the ToolbarItem
-    
-    for (var i = 0; i < [_toolbar items].length; ++i)
-    {
-      if ([[_toolbar items][i] itemIdentifier] == CharSelectorToolbarItem)
-      {
-        toolbarItem = [_toolbar items][i];
-      }
-    }
-    
-    [[toolbarItem view] removeAllItems];
+    var toolbarItem = [self getCharSelectorToolbarItem];
     
     // Add all Characters to the toolbarItem View
     
@@ -261,17 +256,19 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   
   if (connection == _corporationsConnection)
   {
-    var toolbarItem = nil
+    var toolbarItem = [self getCharSelectorToolbarItem];
     
-    // Find the ToolbarItem
-    
-    for (var i = 0; i < [_toolbar items].length; ++i)
+    for (var i = 0; i < obj.result.length; ++i)
     {
-      if ([[_toolbar items][i] itemIdentifier] == CharSelectorToolbarItem)
-      {
-        toolbarItem = [_toolbar items][i];
-      }
+      var menuItem = [[EVMenuItem alloc] init];
+      [menuItem setTarget:self];
+      [menuItem setAction:@selector(charChanged:)];
+      [menuItem setTitle:obj.result[i].fields.corporationName];
+      [menuItem setModelObject:obj.result[i]];
+        
+      [[toolbarItem view] addItem: menuItem];
     }
+    
   }
 }
 
@@ -314,12 +311,12 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
 
   else if (anItemIdentifier == CharSelectorToolbarItem)
   {
-    var selector = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0,128, 24)];
+    var selector = [[CPPopUpButton alloc] initWithFrame:CGRectMake(0,0,256, 24)];
     
     [toolbarItem setView:selector];
     [toolbarItem setLabel:"Switch Character"]
-    [toolbarItem setMinSize:CGSizeMake(128, 24)];
-    [toolbarItem setMaxSize:CGSizeMake(128, 24)];
+    [toolbarItem setMinSize:CGSizeMake(256, 24)];
+    [toolbarItem setMaxSize:CGSizeMake(256, 24)];
   }
   
   else if (anItemIdentifier == AssetsToolbarItem)
@@ -361,4 +358,20 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   }
 }
 
+-(CPToolbarItem) getCharSelectorToolbarItem
+{
+  var toolbarItem = nil
+  
+  // Find the ToolbarItem
+  
+  for (var i = 0; i < [_toolbar items].length; ++i)
+  {
+    if ([[_toolbar items][i] itemIdentifier] == CharSelectorToolbarItem)
+    {
+      toolbarItem = [_toolbar items][i];
+    }
+  }
+  
+  return toolbarItem;
+}
 @end

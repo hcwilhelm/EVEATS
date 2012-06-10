@@ -53,7 +53,8 @@
     
     else if (imageFile.search(/apparel/) != -1)
     {
-      var icon = [[CPImage alloc] initWithContentsOfFile:"./Resources/EveImageDump/Icons/items/" + "38_16_189" + ".png"];
+      // Generic image file 
+      var icon = [[CPImage alloc] initWithContentsOfFile:"./Resources/EveImageDump/Icons/items/" + "38_16_173" + ".png"];
       [_groupIcon setImage:icon]
     }
     
@@ -70,7 +71,8 @@
   
   else 
   {
-    var icon = [[CPImage alloc] initWithContentsOfFile:"./Resources/EveImageDump/Icons/items/" + "38_16_189" + ".png"];
+    // Generic image file 
+    var icon = [[CPImage alloc] initWithContentsOfFile:"./Resources/EveImageDump/Icons/items/" + "38_16_173" + ".png"];
     [_groupIcon setImage:icon]
   }
   

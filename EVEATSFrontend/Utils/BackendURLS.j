@@ -27,8 +27,13 @@ eveAPIKeyURL                  = "/eve/apiKeys/";
 
 eveCharactersURL              = "/eve/characters/";
 eveCorporationsURL            = "/eve/corporations/";
+
 eveCharacterAssetsByGroup     = "/eve/characterAssetsByMarketGroup/";
 eveCharacterAssetsByName      = "/eve/characterAssetsByTypeName/";
 eveCharacterAssetsDetailTree  = "/eve/characterAssetsDetailTree/";
+
+eveCorporationAssetsByGroup     = "/eve/corporationAssetsByMarketGroup/";
+eveCorporationAssetsByName      = "/eve/corporationAssetsByTypeName/";
+eveCorporationAssetsDetailTree  = "/eve/corporationAssetsDetailTree/";
 
 eveMarketGroupTreeURL         = "/evedb/invMarketGroupTree/";

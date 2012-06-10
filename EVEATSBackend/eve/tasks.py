@@ -475,11 +475,13 @@ def updateAssetList(object_id, type):
           # = officeID to stationID conversion refer to eve dev for more information =
           # ==========================================================================
 
-          locationID = element.get("locationID")
+          locationID = int(element.get("locationID"))
 
           if locationID >= 66000000 and locationID < 67000000:
+              print locationID
               locationID -= 6000001
-
+              print locationID
+              
           asset.locationID_id  = locationID
           
         else:

@@ -20,6 +20,11 @@ class CharacterAssetListPermissionHandler(PermissionHandler):
       for key in obj.apiKeys.all():
         if key.user == user_obj:
           user_has_permission = True
+          
+    if perm == 'eve.viewAssetList_corporation':
+      for key in obj.apiKeys.all():
+        if key.user == user_obj:
+          user_has_permission = True
     
     return user_has_permission
 

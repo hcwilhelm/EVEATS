@@ -198,6 +198,53 @@ def character_permission_required(function):
   return wrapper
 
 
+#
+# This Decorater makes sure the User has permission
+# to query assets for a Corporation. It also checks if
+# the Characters exists or if the Character assets need
+# to be updated
+#
+
+def corporation_permission_required(function):
+  @wraps(function)
+  def wrapper(request, corpID, *args, **kwargs):
+
+    response  = HttpResponse(mimetype="application/json")
+    corp      = None
+
+    try:
+      corp = Corporation.objects.get(pk=corpID)
+
+    except Exception, e:
+      jsonResponse = JSONResponse(success=False, message=str(e))
+      response.write(jsonResponse.json())
+      return response
+
+    if not request.user.has_perm('eve.viewAssetList_corporation', corp):
+      jsonResponse = JSONResponse(success=False, message="You don't have permission")
+      response.write(jsonResponse.json())
+      return response
+
+    if corp.assetList == None:
+      result = updateAssetList.delay(corp.pk, "Corporation")
+
+      jsonResponse = JSONResponse(success=True, taskID=result.task_id)
+      response.write(jsonResponse.json())
+      return response
+
+    if corp.assetList.expired():
+      result = updateAssetList.delay(corp.pk, "Corporation")
+
+      jsonResponse = JSONResponse(success=True, taskID=result.task_id)
+      response.write(jsonResponse.json())
+      return response
+
+    else:
+      return function(request, corpID, *args, **kwargs)
+
+  return wrapper
+
+
 @login_required(login_url="/common/authentificationError")
 @character_permission_required
 def characterAssetsByMarketGroup(request, charID, marketGroupID=None):
@@ -228,6 +275,37 @@ def characterAssetsByMarketGroup(request, charID, marketGroupID=None):
     response.write(jsonResponse.json())
 
   return response
+  
+@login_required(login_url="/common/authentificationError")
+@corporation_permission_required
+def corporationAssetsByMarketGroup(request, corpID, marketGroupID=None):
+  response = HttpResponse(mimetype="application/json")
+
+  corp = Corporation.objects.get(pk=corpID)
+
+  expand = lambda obj: {
+    "typeID":obj['typeID'], 
+    "typeName": invTypes.objects.get(pk=obj['typeID']).typeName,
+    "locationName":mapDenormalize.objects.get(pk=obj['locationID']).itemName,
+    "locationID":obj['locationID'],
+    "quantity":obj['total'],
+  }
+
+  if marketGroupID == None:
+    assets = corp.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).values('typeID','locationID').annotate(total = Sum('quantity')).order_by('-total')
+
+    result = [expand(x) for x in assets]
+    jsonResponse = JSONResponse(success=True, result=result)
+    response.write(jsonResponse.json())
+
+  else:
+    assets = corp.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).values('typeID','locationID').annotate(total = Sum('quantity')).order_by('-total')
+
+    result = [expand(x) for x in assets]
+    jsonResponse = JSONResponse(success=True, result=result)
+    response.write(jsonResponse.json())
+
+  return response
 
 @login_required(login_url="/common/authentificationError")
 @character_permission_required
@@ -252,7 +330,29 @@ def characterAssetsByTypeName(request, charID, typeName=""):
   
   return response
   
-  
+@login_required(login_url="/common/authentificationError")
+@corporation_permission_required
+def corporationAssetsByTypeName(request, corpID, typeName=""):
+  response = HttpResponse(mimetype="application/json")
+
+  corp = Corporation.objects.get(pk=corpID)
+
+  expand = lambda obj: {
+    "typeID":obj['typeID'], 
+    "typeName": invTypes.objects.get(pk=obj['typeID']).typeName,
+    "locationName":mapDenormalize.objects.get(pk=obj['locationID']).itemName,
+    "locationID":obj['locationID'],
+    "quantity":obj['total'],
+  }
+
+  assets = corp.assetList.asset_set.filter(typeID__typeName__icontains = typeName).values('typeID','locationID').annotate(total = Sum('quantity')).order_by('-total')[:10]
+
+  result = [expand(x) for x in assets]
+  jsonResponse = JSONResponse(success=True, result=result)
+  response.write(jsonResponse.json())
+
+  return response
+
 # =====================================================
 # = Tree Class, helper to build the Assets DetailView =
 # =====================================================  
@@ -340,5 +440,48 @@ def characterAssetsDetailTree(request, charID, typeID, locationID):
   response.write(jsonResponse.json())
   
   return response
-  
+
+@login_required(login_url="/common/authentificationError")
+@corporation_permission_required
+def corporationAssetsDetailTree(request, corpID, typeID, locationID):
+  response = HttpResponse(mimetype="application/json")
+
+  corp    = Corporation.objects.get(pk=corpID)
+  assets  = corp.assetList.asset_set.filter(typeID=typeID, locationID=locationID)
+
+  paths   = [x.getPath() for x in assets]
+  root    = Node(locationID)
+
+  for path in paths:
+    path.reverse()
+
+    for asset in path:
+      node = root.find(asset)
+
+      if not node:
+
+        node = root.find(asset.parent)
+
+        if node:
+          node.insert(asset)
+
+        else:
+          root.insert(asset)
+
+  root.generateQuantity()
+
+  expand = lambda obj: {
+    "ID":obj.data.pk,
+    "typeID":obj.data.typeID_id, 
+    "typeName":obj.data.typeID.typeName,
+    "flag":obj.data.flag.flagName,
+    "quantity":obj.quantity,
+    "childs":[expand(x) for x in obj.childs],
+  }
+
+  result = [expand(x) for x in root.childs]
+  jsonResponse = JSONResponse(success=True, result=result)
+  response.write(jsonResponse.json())
+
+  return response  
   

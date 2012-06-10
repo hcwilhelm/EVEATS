@@ -13,6 +13,7 @@
 // =========
 
 var charImageURL = "http://image.eveonline.com/Character/";
+var corpImageURL = "http://image.eveonline.com/Corporation/";
 var typeImageURL = "http://image.eveonline.com/Type/";
 
 // =============
@@ -75,6 +76,22 @@ IMGCache = nil;
 
       image = [[CPImage alloc] initWithContentsOfFile:url];
       [_charImageDict setObject:image forKey:obj.pk];
+    }
+  }
+  
+  if (obj.model == @"eve.corporation")
+  {
+    if ([_corpImageDict containsKey:obj.pk])
+    {
+      image = [_corpImageDict objectForKey:obj.pk];
+    }
+    
+    else
+    {
+      var url = corpImageURL + obj.pk + "_64.png";
+      
+      image = [[CPImage alloc] initWithContentsOfFile:url];
+      [_corpImageDict setObject:image forKey:obj.pk];
     }
   }
   

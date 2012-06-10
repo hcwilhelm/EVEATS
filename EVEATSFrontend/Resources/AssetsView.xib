@@ -107,7 +107,7 @@
 															</object>
 															<string key="NSCellIdentifier">_NS:3936</string>
 															<reference key="NSControlView" ref="1004918405"/>
-															<object class="NSColor" key="NSBackgroundColor">
+															<object class="NSColor" key="NSBackgroundColor" id="946157127">
 																<int key="NSColorSpace">6</int>
 																<string key="NSCatalogName">System</string>
 																<string key="NSColorName">controlColor</string>
@@ -164,7 +164,7 @@
 											<int key="NSCellFlags">343014976</int>
 											<int key="NSCellFlags2">268436544</int>
 											<string key="NSContents"/>
-											<object class="NSFont" key="NSSupport">
+											<object class="NSFont" key="NSSupport" id="998436740">
 												<string key="NSName">LucidaGrande</string>
 												<double key="NSSize">13</double>
 												<int key="NSfFlags">1044</int>
@@ -182,7 +182,7 @@
 													<bytes key="NSWhite">MQA</bytes>
 												</object>
 											</object>
-											<object class="NSColor" key="NSTextColor">
+											<object class="NSColor" key="NSTextColor" id="458599469">
 												<int key="NSColorSpace">6</int>
 												<string key="NSCatalogName">System</string>
 												<string key="NSColorName">controlTextColor</string>
@@ -265,10 +265,56 @@
 									<object class="NSCustomView" id="540667759">
 										<reference key="NSNextResponder" ref="770774345"/>
 										<int key="NSvFlags">256</int>
+										<object class="NSMutableArray" key="NSSubviews">
+											<bool key="EncodedWithXMLCoder">YES</bool>
+											<object class="NSCustomView" id="749468328">
+												<reference key="NSNextResponder" ref="540667759"/>
+												<int key="NSvFlags">301</int>
+												<object class="NSMutableArray" key="NSSubviews">
+													<bool key="EncodedWithXMLCoder">YES</bool>
+													<object class="NSTextField" id="312530841">
+														<reference key="NSNextResponder" ref="749468328"/>
+														<int key="NSvFlags">268</int>
+														<string key="NSFrame">{{69, 24}, {134, 17}}</string>
+														<reference key="NSSuperview" ref="749468328"/>
+														<reference key="NSWindow"/>
+														<reference key="NSNextKeyView" ref="954971202"/>
+														<string key="NSReuseIdentifierKey">_NS:3936</string>
+														<bool key="NSEnabled">YES</bool>
+														<object class="NSTextFieldCell" key="NSCell" id="359419978">
+															<int key="NSCellFlags">68288064</int>
+															<int key="NSCellFlags2">272630784</int>
+															<string key="NSContents">Label</string>
+															<reference key="NSSupport" ref="998436740"/>
+															<string key="NSCellIdentifier">_NS:3936</string>
+															<reference key="NSControlView" ref="312530841"/>
+															<reference key="NSBackgroundColor" ref="946157127"/>
+															<reference key="NSTextColor" ref="458599469"/>
+														</object>
+													</object>
+													<object class="NSCustomView" id="675590346">
+														<reference key="NSNextResponder" ref="749468328"/>
+														<int key="NSvFlags">268</int>
+														<string key="NSFrameSize">{64, 64}</string>
+														<reference key="NSSuperview" ref="749468328"/>
+														<reference key="NSWindow"/>
+														<reference key="NSNextKeyView" ref="312530841"/>
+														<string key="NSReuseIdentifierKey">_NS:499</string>
+														<string key="NSClassName">NSView</string>
+													</object>
+												</object>
+												<string key="NSFrame">{{138, 149}, {200, 64}}</string>
+												<reference key="NSSuperview" ref="540667759"/>
+												<reference key="NSWindow"/>
+												<reference key="NSNextKeyView" ref="675590346"/>
+												<string key="NSReuseIdentifierKey">_NS:499</string>
+												<string key="NSClassName">NSView</string>
+											</object>
+										</object>
 										<string key="NSFrameSize">{477, 362}</string>
 										<reference key="NSSuperview" ref="770774345"/>
 										<reference key="NSWindow"/>
-										<reference key="NSNextKeyView" ref="954971202"/>
+										<reference key="NSNextKeyView" ref="749468328"/>
 										<string key="NSReuseIdentifierKey">_NS:547</string>
 										<string key="NSClassName">NSView</string>
 									</object>
@@ -414,6 +460,30 @@
 						<reference key="destination" ref="146523153"/>
 					</object>
 					<int key="connectionID">58</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">progressView</string>
+						<reference key="source" ref="1001"/>
+						<reference key="destination" ref="749468328"/>
+					</object>
+					<int key="connectionID">68</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">progressIndicator</string>
+						<reference key="source" ref="1001"/>
+						<reference key="destination" ref="675590346"/>
+					</object>
+					<int key="connectionID">69</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">progressTextField</string>
+						<reference key="source" ref="1001"/>
+						<reference key="destination" ref="312530841"/>
+					</object>
+					<int key="connectionID">70</int>
 				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
@@ -576,6 +646,7 @@
 						<reference key="object" ref="540667759"/>
 						<object class="NSMutableArray" key="children">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<reference ref="749468328"/>
 						</object>
 						<reference key="parent" ref="770774345"/>
 						<string key="objectName">AssetView</string>
@@ -588,6 +659,38 @@
 						</object>
 						<reference key="parent" ref="770774345"/>
 						<string key="objectName">AssetDetailView</string>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">64</int>
+						<reference key="object" ref="749468328"/>
+						<object class="NSMutableArray" key="children">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<reference ref="675590346"/>
+							<reference ref="312530841"/>
+						</object>
+						<reference key="parent" ref="540667759"/>
+						<string key="objectName">ProgressView</string>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">65</int>
+						<reference key="object" ref="675590346"/>
+						<reference key="parent" ref="749468328"/>
+						<string key="objectName">ProgressIndicator</string>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">66</int>
+						<reference key="object" ref="312530841"/>
+						<object class="NSMutableArray" key="children">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<reference ref="359419978"/>
+						</object>
+						<reference key="parent" ref="749468328"/>
+						<string key="objectName">ProgressTextField</string>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">67</int>
+						<reference key="object" ref="359419978"/>
+						<reference key="parent" ref="312530841"/>
 					</object>
 				</object>
 			</object>
@@ -611,12 +714,20 @@
 					<string>4.IBPluginDependency</string>
 					<string>5.IBPluginDependency</string>
 					<string>6.IBPluginDependency</string>
+					<string>64.IBPluginDependency</string>
+					<string>65.IBPluginDependency</string>
+					<string>66.IBPluginDependency</string>
+					<string>67.IBPluginDependency</string>
 					<string>7.IBPluginDependency</string>
 					<string>8.IBPluginDependency</string>
 					<string>9.IBPluginDependency</string>
 				</object>
 				<object class="NSMutableArray" key="dict.values">
 					<bool key="EncodedWithXMLCoder">YES</bool>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -650,7 +761,7 @@
 				<reference key="dict.values" ref="0"/>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">58</int>
+			<int key="maxID">70</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -684,6 +795,9 @@
 							<string>navigationMetaInfoView</string>
 							<string>navigationSplitView</string>
 							<string>navigationView</string>
+							<string>progressIndicator</string>
+							<string>progressTextField</string>
+							<string>progressView</string>
 							<string>searchField</string>
 						</object>
 						<object class="NSMutableArray" key="dict.values">
@@ -698,6 +812,9 @@
 							<string>NSView</string>
 							<string>NSView</string>
 							<string>NSSplitView</string>
+							<string>NSView</string>
+							<string>NSView</string>
+							<string>NSTextField</string>
 							<string>NSView</string>
 							<string>NSSearchField</string>
 						</object>
@@ -717,6 +834,9 @@
 							<string>navigationMetaInfoView</string>
 							<string>navigationSplitView</string>
 							<string>navigationView</string>
+							<string>progressIndicator</string>
+							<string>progressTextField</string>
+							<string>progressView</string>
 							<string>searchField</string>
 						</object>
 						<object class="NSMutableArray" key="dict.values">
@@ -763,6 +883,18 @@
 							</object>
 							<object class="IBToOneOutletInfo">
 								<string key="name">navigationView</string>
+								<string key="candidateClassName">NSView</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">progressIndicator</string>
+								<string key="candidateClassName">NSView</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">progressTextField</string>
+								<string key="candidateClassName">NSTextField</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">progressView</string>
 								<string key="candidateClassName">NSView</string>
 							</object>
 							<object class="IBToOneOutletInfo">
