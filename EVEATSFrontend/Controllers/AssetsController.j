@@ -34,10 +34,6 @@ AppControllerCharChanged = @"AppControllerCharChanged";
     @outlet CPSplitView           contentSplitView;
       @outlet CPView              assetView;
       @outlet CPView              asserDetailView;
-      
-  @outlet CPView                  progressView;
-    @outlet CPView                progressIndicator;
-    @outlet CPTextField           progressTextField;
   
   CPScrollView                    _outlineScrollView;
   EVMarketGroupOutlineView        _outlineView;
@@ -47,6 +43,8 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   
   CPScrollView                    _assetDetailScrollView;
   CPOutlineView                   _assetDetailOutlineView;
+  
+  CPProgressIndicator             _progressIndicator;
   
   CPButton                        _hideButton;
   CPImage                         _hideButtonImageDisable;
@@ -195,8 +193,7 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   [_assetTableView addTableColumn:quantityColumn];
   
   [_assetScrollView setDocumentView:_assetTableView];
-  
-  [assetView replaceSubview:progressView with:_assetScrollView];
+  [assetView addSubview: _assetScrollView]
   
   // =====================
   // = Asset Detail View =
@@ -242,11 +239,26 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   // = Import Progress View =
   // ========================
 
-  var progress = [[CPProgressIndicator alloc] initWithFrame:CGRectMakeZero()];
-  [progress setStyle:CPProgressIndicatorSpinningStyle];
-  [progress sizeToFit];
+  _progressIndicator = [[CPProgressIndicator alloc] initWithFrame:CGRectMake(0,0,256,16)];
+  [_progressIndicator setStyle:CPProgressIndicatorBarStyle];
   
-  [progressIndicator addSubview: progress];
+  //var progress = [[CPProgressIndicator alloc] initWithFrame:CGRectMakeZero()];
+  //[progress setStyle:CPProgressIndicatorSpinningStyle];
+  //[progress sizeToFit];
+  
+  //[progressIndicator addSubview: progress];
+  
+  //var p = [[CPProgressIndicator alloc] initWithFrame:CGRectMake(100,100,256,16)];
+  //[p setStyle:CPProgressIndicatorBarStyle];
+  //[p setMaxValue: 1000.0];
+  //[p setMinValue: 0.0];
+  //[p setDoubleValue: 344.0];
+  //[p setIndeterminate:YES];
+  //[p startAnimation:self];
+  
+  //[p sizeToFit];
+  
+  //[asserDetailView addSubview: p];
   
   // =============================
   // = Load the MarketGroup Tree =
@@ -327,11 +339,16 @@ AppControllerCharChanged = @"AppControllerCharChanged";
       
       else
       {
+        var containerSize = [assetView frame].size;
+        var elementSize   = [_progressIndicator frame].size;
+        
+        [_progressIndicator setFrame: CGRectMake(containerSize.width/2.0 - elementSize.width/2.0, containerSize.height/2.0 - elementSize.height/2.0, 256, 16)];
+        [_progressIndicator setAutoresizingMask:  CPViewMinXMargin | CPViewMaxXMargin | CPViewMinYMargin | CPViewMaxYMargin];
+                                    
+        [assetView replaceSubview:_assetScrollView with:_progressIndicator];
+        
         var request             = [CPURLRequest requestWithURL:baseURL + "/tasks/" + json.taskID + "/status"];
         _taskProgressConnection = [CPURLConnection connectionWithRequest:request delegate:self];
-        
-        [progressTextField setStringValue:@"Pending"]
-        [assetView replaceSubview:_assetScrollView with:progressView];
       }
     }
   }
@@ -353,9 +370,11 @@ AppControllerCharChanged = @"AppControllerCharChanged";
     
     if (json.task.status == "PROGRESS")
     {
-      [progressTextField setStringValue:@"Progress " + json.task.result.current + " / " + json.task.result.total];
-      
       var request = [CPURLRequest requestWithURL:baseURL + "/tasks/" + json.task.id + "/status"];
+      
+      [_progressIndicator setMinValue: 0.0];
+      [_progressIndicator setMaxValue: json.task.result.total];
+      [_progressIndicator setDoubleValue: json.task.result.current];
       
       window.setTimeout(function() { 
           _taskProgressConnection = [CPURLConnection connectionWithRequest:request delegate:self];
@@ -364,7 +383,8 @@ AppControllerCharChanged = @"AppControllerCharChanged";
     
     if (json.task.status == "SUCCESS")
     {
-      [assetView replaceSubview:progressView with:_assetScrollView];
+      [_assetScrollView setFrame: [assetView bounds]];
+      [assetView replaceSubview:_progressIndicator with:_assetScrollView];
     }
     
   }

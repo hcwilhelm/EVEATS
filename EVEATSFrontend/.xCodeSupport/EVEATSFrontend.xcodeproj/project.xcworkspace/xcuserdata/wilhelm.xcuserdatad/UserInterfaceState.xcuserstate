@@ -1048,7 +1048,7 @@
 				</dict>
 			</array>
 		</dict>
-		<integer>64</integer>
+		<integer>34</integer>
 		<dict>
 			<key>$class</key>
 			<dict>
@@ -2477,7 +2477,7 @@
 			<key>$classname</key>
 			<string>NSDictionary</string>
 		</dict>
-		<string>ProgressView</string>
+		<string>AssetView</string>
 		<string>Xcode.IDEKit.CocoaIntegration.EditorDocument.Cocoa</string>
 		<dict>
 			<key>$class</key>

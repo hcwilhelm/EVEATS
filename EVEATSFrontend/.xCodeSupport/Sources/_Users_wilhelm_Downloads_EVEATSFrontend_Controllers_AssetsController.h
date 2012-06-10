@@ -13,9 +13,6 @@
     IBOutlet NSSplitView* contentSplitView;
     IBOutlet NSView* assetView;
     IBOutlet NSView* asserDetailView;
-    IBOutlet NSView* progressView;
-    IBOutlet NSView* progressIndicator;
-    IBOutlet NSTextField* progressTextField;
 }
 - (IBAction)toggleMetaInfoView:(id)aSender;
 @end
