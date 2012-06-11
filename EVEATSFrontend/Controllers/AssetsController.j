@@ -357,15 +357,13 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   {
     json = CPJSObjectCreateWithJSON(data);
     
-    console.log(json);
-    
     if (json.task.status == "PENDING")
     {
       var request = [CPURLRequest requestWithURL:baseURL + "/tasks/" + json.task.id + "/status"];
       
       window.setTimeout(function() { 
           _taskProgressConnection = [CPURLConnection connectionWithRequest:request delegate:self];
-        }, 100);
+        }, 500);
     }
     
     if (json.task.status == "PROGRESS")
@@ -378,7 +376,7 @@ AppControllerCharChanged = @"AppControllerCharChanged";
       
       window.setTimeout(function() { 
           _taskProgressConnection = [CPURLConnection connectionWithRequest:request delegate:self];
-        }, 100);
+        }, 500);
     }
     
     if (json.task.status == "SUCCESS")

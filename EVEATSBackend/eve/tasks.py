@@ -353,7 +353,6 @@ def updateAPIKey(apiKey_id):
 
 @task
 @locktask
-@transaction.commit_on_success
 def updateAssetList(object_id, type):
 
     print "ImportAssetListTask : " + str(object_id)
@@ -443,7 +442,8 @@ def updateAssetList(object_id, type):
 
     object.assetList = assetList
     object.save()
-
+    
+    bulk    = []
     stack   = [None]
     parent  = None
     context = etree.iterwalk(xml_assets, events=("start", "end"))
@@ -478,9 +478,7 @@ def updateAssetList(object_id, type):
           locationID = int(element.get("locationID"))
 
           if locationID >= 66000000 and locationID < 67000000:
-              print locationID
               locationID -= 6000001
-              print locationID
               
           asset.locationID_id  = locationID
           
@@ -507,7 +505,7 @@ def updateAssetList(object_id, type):
         # Custom state to expose progress to the Frontend ;)
         #
         updateAssetList.update_state(state="PROGRESS", meta={"current": current, "total": int(total)})
-
+    
     print "ImportAssetListTask : " + str(object.pk) + " : Done"
     return True
 

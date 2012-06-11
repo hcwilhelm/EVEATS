@@ -16,6 +16,12 @@ var loginURL     = "/accounts/login/";
 var logoutURL    = "/accounts/logout/";
 var registerURL  = "/accounts/register/";
 
+// =======================================================
+// = CSRF Cookie needed for django's XSite Protectection =
+// =======================================================
+
+var csrfCookie = [[CPCookie alloc] initWithName:@"csrftoken"];
+
 // =================
 // = Notifications =
 // =================
@@ -56,29 +62,41 @@ LoginControllerLoginSuccessful = @"LoginControllerLoginSuccessful";
 
 -(@action) login:(id)sender
 {
-  var bundle = [CPBundle mainBundle];
-  
+  var bundle  = [CPBundle mainBundle];
   var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
   
-  var GET  = "?username=" + [loginUsernameTextField stringValue];
-      GET += "&password=" + [loginPasswordTextField stringValue];
-  
-  var request = [CPURLRequest requestWithURL:baseURL + loginURL + GET];
+  var username = [loginUsernameTextField stringValue];
+  var password = [loginPasswordTextField stringValue];
+
+  var content = [[CPString alloc] initWithFormat:@"username=%@&password=%@", username, password];
+
+  var request = [CPURLRequest requestWithURL:baseURL + loginURL]
+  [request setHTTPMethod:@"POST"]; 
+  [request setHTTPBody:content]; 
+  [request setValue:"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+  [request setValue:[csrfCookie value] forHTTPHeaderField:@"X-CSRFToken"];
+
   _loginConnection = [CPURLConnection connectionWithRequest:request delegate:self];
 }
 
 -(@action) register:(id)sender
 {
-  var bundle = [CPBundle mainBundle];
-  
+  var bundle  = [CPBundle mainBundle];
   var baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port];
   
-  var GET  = "?email="    + [registerEmailTextField stringValue];
-      GET += "&username=" + [registerUsernameTextField stringValue];
-      GET += "&password=" + [registerPasswordTextField stringValue];
-      GET += "&confirm="  + [registerConfirmTextField stringValue];
-      
-  var request = [CPURLRequest requestWithURL:baseURL + registerURL + GET];
+  var email     = [registerEmailTextField stringValue];
+  var username  = [registerUsernameTextField stringValue];
+  var password  = [registerPasswordTextField stringValue];
+  var confirm   = [registerConfirmTextField stringValue];
+  
+  var content = [[CPString alloc] initWithFormat:@"email=%@&username%@&password=%@&confirm=%@", email, username, password, confirm];
+
+  var request = [CPURLRequest requestWithURL:baseURL + registerURL]
+  [request setHTTPMethod:@"POST"]; 
+  [request setHTTPBody:content]; 
+  [request setValue:"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+  [request setValue:[csrfCookie value] forHTTPHeaderField:@"X-CSRFToken"];
+  
   _registerConnection = [CPURLConnection connectionWithRequest:request delegate:self];
 }
 
@@ -107,8 +125,6 @@ LoginControllerLoginSuccessful = @"LoginControllerLoginSuccessful";
 
 -(void)connection:(CPURLConnection)connection didReceiveData:(CPString)data
 {
-  console.log(data);
-  
   var result = CPJSObjectCreateWithJSON(data);
   
   console.log(result);

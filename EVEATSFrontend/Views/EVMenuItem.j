@@ -12,9 +12,11 @@
 
 //
 // MenuItem with model object (Character / Corporation)
+// and a ProgressView is a long running import task was started
 //
 
 @implementation EVMenuItem : CPMenuItem
 {
-  id  modelObject @accessors;
+  id      modelObject @accessors;
+  CPView  progressView @accessors;
 }

@@ -10,6 +10,7 @@ from django.views.decorators.cache import never_cache
 
 from django.core.context_processors import csrf
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt
 
 # =======================
 # = ErrorMessage Object =
@@ -28,18 +29,21 @@ class ErrorMessage(object):
 # ==============
 
 @never_cache
+@csrf_exempt
 @ensure_csrf_cookie
 def login(request):
     response = HttpResponse(mimetype='application/json')
     
+    print request
+    
     auth.logout(request);
         
-    if 'username' not in request.GET or 'password' not in request.GET:
-        message = ErrorMessage(False, "Missing GET parameter! Usage: ?username=&password=")
+    if 'username' not in request.POST or 'password' not in request.POST:
+        message = ErrorMessage(False, "Missing POST parameter! Usage: ?username=&password=")
         response.write(message.json())
         return response
         
-    user = auth.authenticate(username=request.GET['username'], password=request.GET['password'])
+    user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
     
     if user is None:
         message = ErrorMessage(False, "User not  found ! Register first")
@@ -85,32 +89,32 @@ def logout(request):
 def register(request):
     response = HttpResponse(mimetype='application/json')
 
-    if 'email' not in request.GET or 'username' not in request.GET or 'password' not in request.GET or 'confirm' not in request.GET:
-        message = ErrorMessage(False, "Missing GET paramater! Usage: ?email=&username=&password=&confirm=")
+    if 'email' not in request.POST or 'username' not in request.POST or 'password' not in request.POST or 'confirm' not in request.POST:
+        message = ErrorMessage(False, "Missing POST paramater! Usage: ?email=&username=&password=&confirm=")
         response.write(message.json())
         return response
     
-    if request.GET['username'] == "" or request.GET['password'] == "":
+    if request.POST['username'] == "" or request.POST['password'] == "":
         message = ErrorMessage(False, "Username and Password can't be empty")
         response.write(message.json())
         return response
 
-    if User.objects.filter(username=request.GET['username']).exists():
+    if User.objects.filter(username=request.POST['username']).exists():
         message = ErrorMessage(False, "Username allready exists!")
         response.write(message.json())
         return response
  
-    if not email_re.match(request.GET['email']):
+    if not email_re.match(request.POST['email']):
         message = ErrorMessage(False, "Email dosen't look like a valid email address")
         response.write(message.json())
         return response
 
-    if not request.GET['password'] == request.GET['confirm']:
+    if not request.POST['password'] == request.POST['confirm']:
         message = ErrorMessage(False, "Password confirm must be equal to password")
         response.write(message.json())
         return response
 
-    user = User.objects.create_user(request.GET['username'], request.GET['email'], request.GET['password'])
+    user = User.objects.create_user(request.POST['username'], request.POST['email'], request.POST['password'])
     user.is_superuser = False
     user.is_stuff = False
     user.is_active = True
