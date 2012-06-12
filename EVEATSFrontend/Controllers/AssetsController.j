@@ -570,6 +570,16 @@ AppControllerCharChanged = @"AppControllerCharChanged";
 {
   if ([notification object] == _outlineView)
   {
+    //
+    // Clear the assetDetailView
+    //
+    _assetDetailData = [CPDictionary alloc];
+    [_assetDetailOutlineView reloadData];
+    
+    //
+    // Start the Assets Query
+    //
+    
     var item = [[notification object] itemAtRow:[[notification object] selectedRow]];
     
     var request = nil;

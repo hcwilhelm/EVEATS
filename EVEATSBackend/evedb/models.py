@@ -83,6 +83,14 @@ class invMarketGroups(models.Model):
     def __unicode__(self):
         return unicode(self.marketGroupID)
 
+    def findMarketGroupIDs(self):
+      list = [self.pk]
+      
+      for group in self.invmarketgroups_set.all():
+        list.append(group.pk)
+        list.extend(group.findMarketGroupIDs())
+        
+      return list
 
 
 # ============
