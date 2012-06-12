@@ -571,6 +571,12 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   if ([notification object] == _outlineView)
   {
     //
+    // Clear the searchField
+    //
+    
+    [searchField setStringValue:@""];
+    
+    //
     // Clear the assetDetailView
     //
     _assetDetailData = [CPDictionary alloc];
@@ -636,6 +642,16 @@ AppControllerCharChanged = @"AppControllerCharChanged";
 
 -(void) getAssetsByName:(id)sender
 {
+  //
+  // Clear the assetDetailView
+  //
+  _assetDetailData = [CPDictionary alloc];
+  [_assetDetailOutlineView reloadData];
+  
+  //
+  // Start assets query
+  //
+  
   if ([sender stringValue].match(/\w\s*/) )
   {
     var request = nil; //[CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByName + EVSelectedCharacter.pk + "/" + [sender stringValue]];
