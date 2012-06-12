@@ -34,8 +34,6 @@ class ErrorMessage(object):
 def login(request):
     response = HttpResponse(mimetype='application/json')
     
-    print request
-    
     auth.logout(request);
         
     if 'username' not in request.POST or 'password' not in request.POST:

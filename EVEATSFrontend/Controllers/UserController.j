@@ -136,11 +136,15 @@ UserControllerAPIKeyChanged = @"UserControllerAPIKeyChanged";
   var vCode   = [vCodeTextField stringValue];
   var name    = [nameTextField stringValue];
   
-  var GET  = "?keyID="  + keyID;
-      GET += "&vCode="  + vCode;
-      GET += "&name="   + name;
+  var content = [[CPString alloc] initWithFormat:@"keyID=%@&vCode=%@&name=%@", keyID, vCode, name];
+
+  var request = [CPURLRequest requestWithURL:baseURL + eveAddAPIKeyURL];
+  [request setHTTPMethod:@"POST"];
+  [request setHTTPBody:content];
+  [request setValue:"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"]; 
+  [request setValue:[[[CPCookie alloc] initWithName:@"csrftoken"] value] forHTTPHeaderField:@"X-CSRFToken"];
   
-  var request = [CPURLRequest requestWithURL:baseURL + eveAddAPIKeyURL + GET];
+  console.log(request);
   
   _addAPIKeyConnection = [CPURLConnection connectionWithRequest:request delegate:self];
   [addAPIKeyPopover close];

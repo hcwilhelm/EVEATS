@@ -30,9 +30,9 @@ def addAPIKey(request):
   
   print request.body
 
-  keyID = request.GET["keyID"]
-  vCode = request.GET["vCode"]
-  name  = request.GET["name"]
+  keyID = request.POST["keyID"]
+  vCode = request.POST["vCode"]
+  name  = request.POST["name"]
   user  = request.user
 
   apiKey = APIKey(keyID=keyID, vCode=vCode, name=name, user=user)
