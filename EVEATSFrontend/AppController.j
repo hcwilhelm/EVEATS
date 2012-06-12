@@ -123,7 +123,6 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   [[_loginController window] center];
   [[_loginController window] setMovable:NO];
   [[_loginController window] orderFront:self];
-  
 }
 
 // ============
@@ -207,6 +206,19 @@ var AssetsToolbarItem               = "AssetsToolbarItem";
   
   [[_loginController window] close];
   [theWindow orderFront:self];
+  
+  
+  // =====================================
+  // = Load the AssetsView as initalView =
+  // =====================================
+  
+  _assetsController = [[AssetsController alloc] initWithCibName:"AssetsView" bundle:nil];
+  
+  [[_assetsController view] setFrame:[_mainView bounds]];
+  [[_assetsController view] setAutoresizingMask:CPViewWidthSizable | CPViewHeightSizable];
+  
+  [_mainView replaceSubview:_mainSubview with:[_assetsController view]];
+  _mainSubview = [_assetsController view]
 }
 
 -(void) APIKeyChangedNotificationPosted:(id)sender
