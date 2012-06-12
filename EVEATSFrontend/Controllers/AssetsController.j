@@ -11,13 +11,7 @@
 @import "../Utils/BackendURLS.j"
 @import "../Views/EVMarketGroupOutlineView.j"
 @import "../Views/EVTableColumnIconView.j"
-
-
-// =================
-// = Notifications =
-// =================
-
-AppControllerCharChanged = @"AppControllerCharChanged";
+@import "../Views/EVProgressView.j"
 
 
 @implementation AssetsController : CPViewController
@@ -45,6 +39,7 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   CPOutlineView                   _assetDetailOutlineView;
   
   CPProgressIndicator             _progressIndicator;
+  EVProgressView                  _progressView;
   
   CPButton                        _hideButton;
   CPImage                         _hideButtonImageDisable;
@@ -54,6 +49,7 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   CPDictionary                    _treeData;
   CPDictionary                    _assetData;
   CPDictionary                    _assetDetailData;
+  CPDictionary                    _progressDict;
   
   CPURLConnection                 _treeDataConnection;
   CPURLConnection                 _assetDataConnection;
@@ -242,24 +238,6 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   _progressIndicator = [[CPProgressIndicator alloc] initWithFrame:CGRectMake(0,0,256,16)];
   [_progressIndicator setStyle:CPProgressIndicatorBarStyle];
   
-  //var progress = [[CPProgressIndicator alloc] initWithFrame:CGRectMakeZero()];
-  //[progress setStyle:CPProgressIndicatorSpinningStyle];
-  //[progress sizeToFit];
-  
-  //[progressIndicator addSubview: progress];
-  
-  //var p = [[CPProgressIndicator alloc] initWithFrame:CGRectMake(100,100,256,16)];
-  //[p setStyle:CPProgressIndicatorBarStyle];
-  //[p setMaxValue: 1000.0];
-  //[p setMinValue: 0.0];
-  //[p setDoubleValue: 344.0];
-  //[p setIndeterminate:YES];
-  //[p startAnimation:self];
-  
-  //[p sizeToFit];
-  
-  //[asserDetailView addSubview: p];
-  
   // =============================
   // = Load the MarketGroup Tree =
   // =============================
@@ -285,12 +263,38 @@ AppControllerCharChanged = @"AppControllerCharChanged";
 
 -(void) appControllerCharChanged:(id)sender
 {
+  // ===================
+  // = Reset all data  =
+  // =================== 
+  
   _assetData        = [[CPDictionary alloc] init];
   _assetDetailData  = [[CPDictionary alloc] init];
   
   [_assetTableView reloadData];
   [_assetDetailOutlineView reloadData];
   [searchField setStringValue:@""];
+  
+  // =========================================================================================
+  // = Check if we need to display a progress for the current selected Character/Corporation =
+  // =========================================================================================
+  
+  if ([_progressDict objectForKey:EVSelectedCharacter] != nil)
+  {
+    var progressView = [_progressDict objectsForKey:EVSelectedCharacter];
+    
+    if ([progressView isPending])
+    {
+      [assetView replaceSubview:_assetScrollView with:progressView];
+    }
+    
+  }
+}
+
+-(void) progressViewDidFinish:(id)sender
+{
+  // ===========================
+  // = Needs to be implemented =
+  // ===========================
 }
 
 -(@action) toggleMetaInfoView:(id)sender
@@ -344,8 +348,13 @@ AppControllerCharChanged = @"AppControllerCharChanged";
         
         [_progressIndicator setFrame: CGRectMake(containerSize.width/2.0 - elementSize.width/2.0, containerSize.height/2.0 - elementSize.height/2.0, 256, 16)];
         [_progressIndicator setAutoresizingMask:  CPViewMinXMargin | CPViewMaxXMargin | CPViewMinYMargin | CPViewMaxYMargin];
-                                    
+        
+        
+        //_progressView = [[EVProgressView alloc] initWithFrame:[assetView frame] forTaskID: json.taskID];
+        //[_progressView setAutoresizingMask:  CPViewMinXMargin | CPViewMaxXMargin | CPViewMinYMargin | CPViewMaxYMargin];
+        
         [assetView replaceSubview:_assetScrollView with:_progressIndicator];
+        //[assetView replaceSubview:_assetScrollView with:_progressView];
         
         var request             = [CPURLRequest requestWithURL:baseURL + "/tasks/" + json.taskID + "/status"];
         _taskProgressConnection = [CPURLConnection connectionWithRequest:request delegate:self];

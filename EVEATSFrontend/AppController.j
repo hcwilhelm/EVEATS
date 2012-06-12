@@ -34,6 +34,12 @@ var CharSelectorToolbarItem         = "CharSelectorToolbarItem";
 var ManageAccountToolbarItem        = "ManageAccountToolbarItem";
 var AssetsToolbarItem               = "AssetsToolbarItem";
 
+// =================
+// = Notifications =
+// =================
+
+AppControllerCharChanged = @"AppControllerCharChanged";
+
 // =======================
 // = Class AppController =
 // =======================

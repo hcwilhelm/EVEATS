@@ -19,21 +19,21 @@ baseURL = "http://" + [[bundle bundleURL] host] + ":" + [[bundle bundleURL] port
 // = Backend URL's                                                                 =
 // =================================================================================
 
-userInfoURL                   = "/accounts/info/";
+userInfoURL                       = "/accounts/info/";
 
-eveAddAPIKeyURL               = "/eve/addAPIKey/";
-eveRemoveAPIKeyURL            = "/eve/removeAPIKey/";
-eveAPIKeyURL                  = "/eve/apiKeys/";
+eveAddAPIKeyURL                   = "/eve/addAPIKey/";
+eveRemoveAPIKeyURL                = "/eve/removeAPIKey/";
+eveAPIKeyURL                      = "/eve/apiKeys/";
 
-eveCharactersURL              = "/eve/characters/";
-eveCorporationsURL            = "/eve/corporations/";
+eveCharactersURL                  = "/eve/characters/";
+eveCorporationsURL                = "/eve/corporations/";
 
-eveCharacterAssetsByGroup     = "/eve/characterAssetsByMarketGroup/";
-eveCharacterAssetsByName      = "/eve/characterAssetsByTypeName/";
-eveCharacterAssetsDetailTree  = "/eve/characterAssetsDetailTree/";
+eveCharacterAssetsByGroup         = "/eve/characterAssetsByMarketGroup/";
+eveCharacterAssetsByName          = "/eve/characterAssetsByTypeName/";
+eveCharacterAssetsDetailTree      = "/eve/characterAssetsDetailTree/";
 
-eveCorporationAssetsByGroup     = "/eve/corporationAssetsByMarketGroup/";
-eveCorporationAssetsByName      = "/eve/corporationAssetsByTypeName/";
-eveCorporationAssetsDetailTree  = "/eve/corporationAssetsDetailTree/";
+eveCorporationAssetsByGroup       = "/eve/corporationAssetsByMarketGroup/";
+eveCorporationAssetsByName        = "/eve/corporationAssetsByTypeName/";
+eveCorporationAssetsDetailTree    = "/eve/corporationAssetsDetailTree/";
 
-eveMarketGroupTreeURL         = "/evedb/invMarketGroupTree/";
+eveMarketGroupTreeURL             = "/evedb/invMarketGroupTree/";

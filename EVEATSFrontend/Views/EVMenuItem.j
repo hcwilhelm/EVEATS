@@ -18,5 +18,6 @@
 @implementation EVMenuItem : CPMenuItem
 {
   id      modelObject @accessors;
-  CPView  progressView @accessors;
 }
+
+@end
