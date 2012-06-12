@@ -570,37 +570,46 @@ AppControllerCharChanged = @"AppControllerCharChanged";
 {
   if ([notification object] == _outlineView)
   {
-    //
-    // Clear the searchField
-    //
-    
-    [searchField setStringValue:@""];
-    
-    //
-    // Clear the assetDetailView
-    //
-    _assetDetailData = [CPDictionary alloc];
-    [_assetDetailOutlineView reloadData];
-    
-    //
-    // Start the Assets Query
-    //
-    
-    var item = [[notification object] itemAtRow:[[notification object] selectedRow]];
-    
-    var request = nil;
-    
-    if (EVSelectedCharacter.model == @"eve.character")
+    if ([[notification object] selectedRow] != -1)
     {
-      request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByGroup + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
-    }
+      //
+      // Clear the searchField
+      //
 
-    if (EVSelectedCharacter.model == @"eve.corporation")
-    {
-      request = [CPURLRequest requestWithURL:baseURL + eveCorporationAssetsByGroup + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
+      [searchField setStringValue:@""];
+
+      //
+      // Clear AssetsTableView
+      //
+
+      [_assetTableView deselectAll];
+
+      //
+      // Clear the assetDetailView
+      //
+      _assetDetailData = [CPDictionary alloc];
+      [_assetDetailOutlineView reloadData];
+
+      //
+      // Start the Assets Query
+      //
+
+      var item = [[notification object] itemAtRow:[[notification object] selectedRow]];
+
+      var request = nil;
+
+      if (EVSelectedCharacter.model == @"eve.character")
+      {
+        request = [CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByGroup + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
+      }
+
+      if (EVSelectedCharacter.model == @"eve.corporation")
+      {
+        request = [CPURLRequest requestWithURL:baseURL + eveCorporationAssetsByGroup + EVSelectedCharacter.pk + "/" + [item objectForKey:@"marketGroupID"]];
+      }
+
+      _assetDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
     }
-    
-    _assetDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
   }
 
 }
@@ -643,6 +652,18 @@ AppControllerCharChanged = @"AppControllerCharChanged";
 -(void) getAssetsByName:(id)sender
 {
   //
+  // Clear AssetsTableView
+  //
+    
+  [_assetTableView deselectAll];
+  
+  //
+  // Clear outlineView
+  //
+  
+  [_outlineView deselectAll];
+  
+  //
   // Clear the assetDetailView
   //
   _assetDetailData = [CPDictionary alloc];
@@ -654,6 +675,8 @@ AppControllerCharChanged = @"AppControllerCharChanged";
   
   if ([sender stringValue].match(/\w\s*/) )
   {
+    console.log([sender stringValue]);
+    
     var request = nil; //[CPURLRequest requestWithURL:baseURL + eveCharacterAssetsByName + EVSelectedCharacter.pk + "/" + [sender stringValue]];
     
     if (EVSelectedCharacter.model == @"eve.character")
