@@ -20,6 +20,18 @@ from django.http import HttpResponse
 
 from celery.task.sets import TaskSet
 
+# =============================================
+# = I needed to increese the recursion limit  =
+# =============================================
+
+#
+# We should try to optimize the the AssetsDetailTree view
+# to avoid this recursion depth
+#
+
+import sys
+sys.setrecursionlimit(10000)
+
 # ======================
 # = APIKey Operations  =
 # ======================
