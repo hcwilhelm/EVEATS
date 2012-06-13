@@ -4,20 +4,23 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    # ('Your Name', 'your_email@example.com'),
+  # ('Your Name', 'your_email@example.com'),
 )
 
 MANAGERS = ADMINS
 
 DATABASES = {
-    'default': {
-        'ENGINE'    : 	'django.db.backends.mysql', 	# Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME'      : 	'',                         	# Or path to database file if using sqlite3.
-        'USER'      : 	'',                         	# Not used with sqlite3.
-        'PASSWORD'  :   '',	                        	# Not used with sqlite3.
-        'HOST'      : 	'localhost',                	# Set to empty string for localhost. Not used with sqlite3.
-        'PORT'      : 	'3306',                     	# Set to empty string for default. Not used with sqlite3.
-    },
+  'default': {
+    'ENGINE'    : 	'django.db.backends.mysql', 	# Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+    'NAME'      : 	'',                         	# Or path to database file if using sqlite3.
+    'USER'      : 	'',                         	# Not used with sqlite3.
+    'PASSWORD'  :   '',	                        	# Not used with sqlite3.
+    'HOST'      : 	'localhost',                	# Set to empty string for localhost. Not used with sqlite3.
+    'PORT'      : 	'3306',                     	# Set to empty string for default. Not used with sqlite3.
+    'OPTIONS': {
+      'init_command': 'SET storage_engine=INNODB',
+    }
+  },
 }
 
 # EVE API Connection URL 
@@ -32,7 +35,7 @@ EVE_API_PORT = 443
 # timezone as the operating system.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'America/Chicago'
+TIME_ZONE = 'Europe/Berlin'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -65,22 +68,22 @@ STATIC_ROOT = ''
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
-STATIC_URL = '/static/'
+STATIC_URL = '/EVEATS/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-	"/home/wilhelm/EVEATS/EVEATSFrontend",
+  # Put strings here, like "/home/html/static" or "C:/www/django/static".
+  # Always use forward slashes, even on Windows.
+  # Don't forget to use absolute paths, not relative paths.
+  "/path/to/your/EVEATSFrontend",
 )
 
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+  'django.contrib.staticfiles.finders.FileSystemFinder',
+  'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+  #'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -88,9 +91,9 @@ SECRET_KEY = '&z&8)!e@twh=hc*76ng$fnikm+z+*94a=-m2l*b^l&&p_#y8d8'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-    'django.template.loaders.eggs.Loader',
+  'django.template.loaders.filesystem.Loader',
+  'django.template.loaders.app_directories.Loader',
+  'django.template.loaders.eggs.Loader',
 )
 
 # Cache backend memcached
@@ -114,22 +117,24 @@ BROKER_VHOST                  = ""
 
 CELERYD_CONCURRENCY           = 64
 CELERYD_PREFETCH_MULTIPLIER   = 1
+CELERYD_LOG_LEVEL             = "INFO"
+CELERYBEAT_LOG_LEVEL          = "INFO"
 
 # Django Middelware Classes
 MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    #'django.contrib.messages.middleware.MessageMiddleware',
-    #'django.middleware.cache.UpdateCacheMiddleware',
-    #'django.middleware.cache.FetchFromCacheMiddleware',
+  'django.middleware.common.CommonMiddleware',
+  'django.contrib.sessions.middleware.SessionMiddleware',
+  'django.middleware.csrf.CsrfViewMiddleware',
+  'django.contrib.auth.middleware.AuthenticationMiddleware',
+  #'django.contrib.messages.middleware.MessageMiddleware',
+  #'django.middleware.cache.UpdateCacheMiddleware',
+  #'django.middleware.cache.FetchFromCacheMiddleware',
 )
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'permission.backends.RoleBackend',
-    'permission.backends.PermissionBackend',
+  'django.contrib.auth.backends.ModelBackend',
+  'permission.backends.RoleBackend',
+  'permission.backends.PermissionBackend',
 )
 
 ROOT_URLCONF = 'EVEATSBackend.urls'
@@ -138,32 +143,32 @@ ROOT_URLCONF = 'EVEATSBackend.urls'
 WSGI_APPLICATION = 'EVEATSBackend.wsgi.application'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-   #"/usr/local/lib/python2.6/dist-packages/django_extensions/templates",
-   #"/usr/local/lib/python2.6/dist-packages/django_extensions/templates/django_extensions/graph_models",
+  # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+  # Always use forward slashes, even on Windows.
+  # Don't forget to use absolute paths, not relative paths.
+  #"/usr/local/lib/python2.6/dist-packages/django_extensions/templates",
+  #"/usr/local/lib/python2.6/dist-packages/django_extensions/templates/django_extensions/graph_models",
 )
 
 INSTALLED_APPS = (
-    'evedb',
-    'eve',
-    'accounts',
-    'common',
-    'evecentral',
-    'djcelery',
-    'permission',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.staticfiles',
-    'django_extensions',
-    #'django.contrib.sites',
-    #'django.contrib.messages',
-    # Uncomment the next line to enable the admin:
-    # 'django.contrib.admin',
-    # Uncomment the next line to enable admin documentation:
-    # 'django.contrib.admindocs',
+  'evedb',
+  'eve',
+  'accounts',
+  'common',
+  'evecentral',
+  'djcelery',
+  'permission',
+  'django.contrib.auth',
+  'django.contrib.contenttypes',
+  'django.contrib.sessions',
+  'django.contrib.staticfiles',
+  'django_extensions',
+  #'django.contrib.sites',
+  #'django.contrib.messages',
+  # Uncomment the next line to enable the admin:
+  # 'django.contrib.admin',
+  # Uncomment the next line to enable admin documentation:
+  # 'django.contrib.admindocs',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -172,19 +177,19 @@ INSTALLED_APPS = (
 # See http://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'mail_admins': {
-            'level': 'ERROR',
-            'class': 'django.utils.log.AdminEmailHandler'
-        }
-    },
-    'loggers': {
-        'django.request': {
-            'handlers': ['mail_admins'],
-            'level': 'ERROR',
-            'propagate': True,
-        },
+  'version': 1,
+  'disable_existing_loggers': False,
+  'handlers': {
+    'mail_admins': {
+      'level': 'ERROR',
+      'class': 'django.utils.log.AdminEmailHandler'
     }
+  },
+  'loggers': {
+    'django.request': {
+      'handlers': ['mail_admins'],
+      'level': 'ERROR',
+      'propagate': True,
+    },
+  }
 }
