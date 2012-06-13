@@ -89,7 +89,7 @@ LoginControllerLoginSuccessful = @"LoginControllerLoginSuccessful";
   var password  = [registerPasswordTextField stringValue];
   var confirm   = [registerConfirmTextField stringValue];
   
-  var content = [[CPString alloc] initWithFormat:@"email=%@&username%@&password=%@&confirm=%@", email, username, password, confirm];
+  var content = [[CPString alloc] initWithFormat:@"email=%@&username=%@&password=%@&confirm=%@", email, username, password, confirm];
 
   var request = [CPURLRequest requestWithURL:baseURL + registerURL]
   [request setHTTPMethod:@"POST"]; 
@@ -144,6 +144,11 @@ LoginControllerLoginSuccessful = @"LoginControllerLoginSuccessful";
   if (connection == _registerConnection)
   {
     [messageTextField setStringValue:result.message];
+    
+    [registerEmailTextField setStringValue:@""];
+    [registerUsernameTextField setStringValue:@""];
+    [registerPasswordTextField setStringValue:@""];
+    [registerConfirmTextField setStringValue:@""];
   }
 }
 

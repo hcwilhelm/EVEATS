@@ -84,6 +84,7 @@ def logout(request):
 # =================
 
 @never_cache
+@csrf_exempt
 def register(request):
     response = HttpResponse(mimetype='application/json')
 

@@ -9,9 +9,12 @@
 @import <Foundation/Foundation.j>
 @import "../Utils/BackendURLS.j"
 
-var EVProgressViewStatusPending   = 1 << 0;
-var EVProgressViewStatusProgress  = 1 << 1;
-var EVProgressViewStatusSuccess   = 1 << 2;
+
+// =================
+// = Notifications =
+// =================
+
+ProgressViewDidFinish = @"ProgressViewDidFinish";
 
 @implementation EVProgressView : CPView
 {
@@ -20,12 +23,16 @@ var EVProgressViewStatusSuccess   = 1 << 2;
   CPURLRequest        _progressRequest;
   CPURLConnection     _progressConnection;
   
-  int                 _status;
-  String              _taskID; 
-  int                 _requestIntervall;
+  boolean             running   @accessors(readonly);
+  boolean             paused    @accessors;
+  
+  String              taskID    @accessors;
+  int                 charID    @accessors;
+  
+  int                 timer     @accessors;
 }
 
--(id) initWithFrame:(CPRect)aFrame forTaskID:(String)aID
+-(id) initWithFrame:(CPRect)aFrame forTaskID:(String)aTaskID andCharID:(int)aCharID
 {
   self = [super initWithFrame:aFrame];
   
@@ -43,54 +50,24 @@ var EVProgressViewStatusSuccess   = 1 << 2;
     
     [self addSubview: _progressIndicator];
     
-    _status = EVProgressViewStatusPending;
-    _taskID = aID;
-    _requestIntervall = 100;
+    running = NO;
+    paused  = NO;
     
-    _request = [CPURLRequest requestWithURL:baseURL + "/tasks/" + _taskID + "/status"];
-    _progressConnection = [CPURLConnection connectionWithRequest:_request delegate:self];
+    taskID  = aTaskID;
+    charID  = aCharID;
+    
+    timer   = 500;
   }
   
   return self;
 }
 
--(Boolean) isPending
+-(void) start
 {
-  if (_status == EVProgressViewStatusPending)
-  {
-    return YES;
-  }
+  running = YES;
   
-  else
-  {
-    return NO;
-  }
-}
-
--(Boolean) isInProgress
-{
-  if (_status == EVProgressViewStatusProgress)
-  {
-    return YES;
-  }
-  
-  else
-  {
-    return NO;
-  }
-}
-
--(Boolean) isSuccess
-{
-  if (_status == EVProgressViewStatusSuccess)
-  {
-    return YES;
-  }
-  
-  else
-  {
-    return NO;
-  }
+  _request = [CPURLRequest requestWithURL:baseURL + "/tasks/" + taskID + "/status"];
+  _progressConnection = [CPURLConnection connectionWithRequest:_request delegate:self];
 }
 
 -(void) connection:(CPURLConnection)connection didReceiveData:(CPString)data
@@ -101,33 +78,33 @@ var EVProgressViewStatusSuccess   = 1 << 2;
     
     if (json.task.status == "PENDING")
     {
-      _status = EVProgressViewStatusPending;
-      
       window.setTimeout(function() { 
-          _progressConnection = [CPURLConnection connectionWithRequest:_request delegate:self];
-        }, _requestIntervall);
+        _request = [CPURLRequest requestWithURL:baseURL + "/tasks/" + taskID + "/status"];
+        _progressConnection = [CPURLConnection connectionWithRequest:_request delegate:self];
+      }, timer);
     }
     
     if (json.task.status == "PROGRESS")
-    {
-      _status = EVProgressViewStatusProgress;
-      
+    { 
       var currentProgressValue = json.task.result.current;
       var maximumProgressValue = json.task.result.total;
       
       [_progressIndicator setDoubleValue: currentProgressValue / (maximumProgressValue / 100.0)];
       
       window.setTimeout(function() { 
-          _progressConnection = [CPURLConnection connectionWithRequest:_request delegate:self];
-        }, _requestIntervall);
+        _request = [CPURLRequest requestWithURL:baseURL + "/tasks/" + taskID + "/status"];
+        _progressConnection = [CPURLConnection connectionWithRequest:_request delegate:self];
+      }, timer);
     }
     
     if (json.task.status == "SUCCESS")
     {
-      _status = EVProgressViewStatusSuccess;
-      [_progressIndicator setDoubleValue: 100.0];
+      console.log("Task success running NO");
       
-      [[CPNotificationCenter defaultCenter] postNotificationName:AppControllerCharChanged object:self];
+      [_progressIndicator setDoubleValue: 100.0];
+      running = NO;
+      
+      [[CPNotificationCenter defaultCenter] postNotificationName:ProgressViewDidFinish object:self];
     }
   }
 }

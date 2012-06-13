@@ -38,9 +38,6 @@
   CPScrollView                    _assetDetailScrollView;
   CPOutlineView                   _assetDetailOutlineView;
   
-  CPProgressIndicator             _progressIndicator;
-  EVProgressView                  _progressView;
-  
   CPButton                        _hideButton;
   CPImage                         _hideButtonImageDisable;
   CPImage                         _hideButtonImageEnable;
@@ -49,12 +46,13 @@
   CPDictionary                    _treeData;
   CPDictionary                    _assetData;
   CPDictionary                    _assetDetailData;
+  
   CPDictionary                    _progressDict;
+  EVProgressView                  _progressView;
   
   CPURLConnection                 _treeDataConnection;
   CPURLConnection                 _assetDataConnection;
   CPURLConnection                 _assetDetailDataConnection;
-  CPURLConnection                 _taskProgressConnection;
 }
 
 -(void)awakeFromCib
@@ -231,12 +229,14 @@
   [_assetDetailScrollView setDocumentView:_assetDetailOutlineView];
   [asserDetailView addSubview:_assetDetailScrollView];
   
-  // ========================
-  // = Import Progress View =
-  // ========================
-
-  _progressIndicator = [[CPProgressIndicator alloc] initWithFrame:CGRectMake(0,0,256,16)];
-  [_progressIndicator setStyle:CPProgressIndicatorBarStyle];
+  // =============================
+  // = Inititialize CPDictionary =
+  // =============================
+  
+  _treeData         = [[CPDictionary alloc] init];
+  _assetData        = [[CPDictionary alloc] init];
+  _assetDetailData  = [[CPDictionary alloc] init];
+  _progressDict     = [[CPDictionary alloc] init];
   
   // =============================
   // = Load the MarketGroup Tree =
@@ -253,6 +253,12 @@
     selector:@selector(appControllerCharChanged:)
     name:AppControllerCharChanged
     object:nil];
+    
+  [[CPNotificationCenter defaultCenter] 
+    addObserver:self
+    selector:@selector(progressViewDidFinish:)
+    name:ProgressViewDidFinish
+    object:nil];
 }
 
 -(void) loadTreeData
@@ -260,6 +266,11 @@
   var request         = [CPURLRequest requestWithURL:baseURL + eveMarketGroupTreeURL];
   _treeDataConnection = [CPURLConnection connectionWithRequest:request delegate:self];
 }
+
+
+// ==========================
+// = Notification Callbacks =
+// ==========================
 
 -(void) appControllerCharChanged:(id)sender
 {
@@ -272,30 +283,46 @@
   
   [_assetTableView reloadData];
   [_assetDetailOutlineView reloadData];
+  [_outlineView deselectAll];
   [searchField setStringValue:@""];
   
   // =========================================================================================
   // = Check if we need to display a progress for the current selected Character/Corporation =
   // =========================================================================================
   
-  if ([_progressDict objectForKey:EVSelectedCharacter] != nil)
+  if ([_progressDict objectForKey:EVSelectedCharacter.pk])
   {
-    var progressView = [_progressDict objectsForKey:EVSelectedCharacter];
+    var progressView = [_progressDict objectForKey:EVSelectedCharacter.pk];
     
-    if ([progressView isPending])
+    if ([progressView running])
     {
-      [assetView replaceSubview:_assetScrollView with:progressView];
+      [[assetView subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
+      [assetView addSubview:progressView];
     }
     
+    else 
+    {
+      [[assetView subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
+      [assetView addSubview:_assetScrollView];
+    }
+  }
+  
+  else
+  {
+    [[assetView subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
+    [assetView addSubview:_assetScrollView];
   }
 }
 
 -(void) progressViewDidFinish:(id)sender
 {
-  // ===========================
-  // = Needs to be implemented =
-  // ===========================
+  [assetView replaceSubview:[sender object] with:_assetScrollView];
+  [_progressDict removeObjectForKey: [[sender object] charID]];
 }
+
+// ============
+// = Actions  =
+// ============
 
 -(@action) toggleMetaInfoView:(id)sender
 {
@@ -342,58 +369,17 @@
       }
       
       else
-      {
-        var containerSize = [assetView frame].size;
-        var elementSize   = [_progressIndicator frame].size;
+      {  
+        var progressView = [[EVProgressView alloc] initWithFrame:[assetView frame] forTaskID: json.taskID andCharID: EVSelectedCharacter.pk];
+        [progressView setAutoresizingMask:  CPViewMinXMargin | CPViewMaxXMargin | CPViewMinYMargin | CPViewMaxYMargin];
+        [progressView start];
         
-        [_progressIndicator setFrame: CGRectMake(containerSize.width/2.0 - elementSize.width/2.0, containerSize.height/2.0 - elementSize.height/2.0, 256, 16)];
-        [_progressIndicator setAutoresizingMask:  CPViewMinXMargin | CPViewMaxXMargin | CPViewMinYMargin | CPViewMaxYMargin];
+        [_progressDict setObject: progressView forKey: EVSelectedCharacter.pk]
+        [assetView replaceSubview:_assetScrollView with: progressView];
         
-        
-        //_progressView = [[EVProgressView alloc] initWithFrame:[assetView frame] forTaskID: json.taskID];
-        //[_progressView setAutoresizingMask:  CPViewMinXMargin | CPViewMaxXMargin | CPViewMinYMargin | CPViewMaxYMargin];
-        
-        [assetView replaceSubview:_assetScrollView with:_progressIndicator];
-        //[assetView replaceSubview:_assetScrollView with:_progressView];
-        
-        var request             = [CPURLRequest requestWithURL:baseURL + "/tasks/" + json.taskID + "/status"];
-        _taskProgressConnection = [CPURLConnection connectionWithRequest:request delegate:self];
+        _progressView = progressView;
       }
     }
-  }
-  
-  if (connection == _taskProgressConnection)
-  {
-    json = CPJSObjectCreateWithJSON(data);
-    
-    if (json.task.status == "PENDING")
-    {
-      var request = [CPURLRequest requestWithURL:baseURL + "/tasks/" + json.task.id + "/status"];
-      
-      window.setTimeout(function() { 
-          _taskProgressConnection = [CPURLConnection connectionWithRequest:request delegate:self];
-        }, 500);
-    }
-    
-    if (json.task.status == "PROGRESS")
-    {
-      var request = [CPURLRequest requestWithURL:baseURL + "/tasks/" + json.task.id + "/status"];
-      
-      [_progressIndicator setMinValue: 0.0];
-      [_progressIndicator setMaxValue: json.task.result.total];
-      [_progressIndicator setDoubleValue: json.task.result.current];
-      
-      window.setTimeout(function() { 
-          _taskProgressConnection = [CPURLConnection connectionWithRequest:request delegate:self];
-        }, 500);
-    }
-    
-    if (json.task.status == "SUCCESS")
-    {
-      [_assetScrollView setFrame: [assetView bounds]];
-      [assetView replaceSubview:_progressIndicator with:_assetScrollView];
-    }
-    
   }
   
   if (connection == _assetDetailDataConnection)
