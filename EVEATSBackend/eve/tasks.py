@@ -296,7 +296,7 @@ def updateAPIKey(apiKey_id):
 
     apiKey.save()
 
-    if apiKey.accountType == "Account":
+    if apiKey.accountType == "Account" or apiKey.accountType == "Character":
       for xml_row in xml_rowset.iter("row"):
 
         character, created = Character.objects.get_or_create(pk=xml_row.get("characterID"))
@@ -312,7 +312,7 @@ def updateAPIKey(apiKey_id):
 
         CharacterAPIKeys.objects.get_or_create(apiKey=apiKey, character=character)
 
-    else:
+    elif apiKey.accountType == "Corporation":
       for xml_row in xml_rowset.iter("row"):
 
         character, created = Character.objects.get_or_create(pk=xml_row.get("characterID"))
@@ -338,6 +338,9 @@ def updateAPIKey(apiKey_id):
         #
 
         CorporationAPIKeys.objects.get_or_create(apiKey=apiKey, corporation=corporation, provider=character)
+        
+    else:
+      print "WTF"
 
   return True
 
