@@ -500,7 +500,7 @@ def updateAssetList(object_id, type):
         parent = asset
 
         current += 1
-
+        
         #
         # Custom state to expose progress to the Frontend ;)
         #

@@ -124,7 +124,7 @@ class Station(models.Model):
 
 class ConquerableStation(models.Model):
   stationID         = models.PositiveIntegerField(primary_key=True)
-  stationName       = models.CharField(max_length=256)
+  stationName       = models.CharField(max_length=255)
   stationType       = models.ForeignKey('evedb.staStationTypes')
   solarSystem       = models.ForeignKey('evedb.mapSolarSystems')
   corporation       = models.ForeignKey('Corporation')

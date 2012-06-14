@@ -315,6 +315,8 @@ def corporationAssetsByMarketGroup(request, corpID, marketGroupID=None):
     marketGroup = invMarketGroups.objects.get(pk=marketGroupID)
     assets = corp.assetList.asset_set.filter(typeID__marketGroupID__in = marketGroup.findMarketGroupIDs()).values('typeID','locationID').annotate(total = Sum('quantity')).order_by('-total')
 
+    print assets[0]
+    
     result = [expand(x) for x in assets]
     jsonResponse = JSONResponse(success=True, result=result)
     response.write(jsonResponse.json())

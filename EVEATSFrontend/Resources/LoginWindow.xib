@@ -181,7 +181,7 @@
 											<string key="NSFrame">{{12, 14}, {82, 32}}</string>
 											<reference key="NSSuperview" ref="157772287"/>
 											<reference key="NSWindow"/>
-											<reference key="NSNextKeyView"/>
+											<reference key="NSNextKeyView" ref="752183508"/>
 											<string key="NSReuseIdentifierKey">_NS:161</string>
 											<bool key="NSEnabled">YES</bool>
 											<object class="NSButtonCell" key="NSCell" id="443972575">
@@ -430,6 +430,7 @@
 							<string key="NSFrame">{{17, 20}, {766, 17}}</string>
 							<reference key="NSSuperview" ref="143977254"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView"/>
 							<string key="NSReuseIdentifierKey">_NS:3936</string>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="63009157">
@@ -610,22 +611,6 @@
 						<reference key="destination" ref="1013254636"/>
 					</object>
 					<int key="connectionID">49</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">login:</string>
-						<reference key="source" ref="1001"/>
-						<reference key="destination" ref="775369859"/>
-					</object>
-					<int key="connectionID">53</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">register:</string>
-						<reference key="source" ref="1001"/>
-						<reference key="destination" ref="3954930"/>
-					</object>
-					<int key="connectionID">55</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
