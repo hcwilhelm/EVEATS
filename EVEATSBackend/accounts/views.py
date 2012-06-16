@@ -12,10 +12,13 @@ from django.core.context_processors import csrf
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.csrf import csrf_exempt
 
+# import the logging library
+import logging
+logger = logging.getLogger(__name__)
+
 # =======================
 # = ErrorMessage Object =
 # =======================
-
 class ErrorMessage(object):
     def __init__(self, success, message):
         self.success = success
@@ -27,43 +30,44 @@ class ErrorMessage(object):
 # ==============
 # = login view =
 # ==============
-
 @never_cache
 @csrf_exempt
 @ensure_csrf_cookie
 def login(request):
-    response = HttpResponse(mimetype='application/json')
+  response = HttpResponse(mimetype='application/json')  
+  auth.logout(request);
+      
+  if 'username' not in request.POST or 'password' not in request.POST:
+    message = ErrorMessage(False, "Missing POST parameter!")
+    response.write(message.json())
+    logger.error("Invalid login: Username or password not set.")
+    return response
+      
+  user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
+  
+  if user is None:
+    message = ErrorMessage(False, "User not  found! Register first")
+    response.write(message.json());
+    logger.warning("User %s tried to login, but account does not exists!" % request.POST['username'])
+    return response     
+  
+  else:
+    if user.is_active:
+      auth.login(request, user)
+      message = ErrorMessage(True, "Login successful")
+      response.write(message.json())
+      logger.info("Login successful for user %s" % user)
+      return response    
     
-    auth.logout(request);
-        
-    if 'username' not in request.POST or 'password' not in request.POST:
-        message = ErrorMessage(False, "Missing POST parameter! Usage: ?username=&password=")
-        response.write(message.json())
-        return response
-        
-    user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
-    
-    if user is None:
-        message = ErrorMessage(False, "User not  found ! Register first")
-        response.write(message.json());
-        return response 
-        
     else:
-        if user.is_active:
-            auth.login(request, user)
-            message = ErrorMessage(True, "Login successful")
-            response.write(message.json())
-            return response
-        
-        else:
-            message = ErrorMessage(False, "User not active ! Activate your account first")
-            response.write(message.json())
-            return response
+      message = ErrorMessage(False, "User not active! Activate your account first")
+      response.write(message.json())
+      logger.warning("User %s tried to login, but is not activated yet!" % user)
+      return response
 
 # ===============
 # = logout view =
 # ===============
-
 @never_cache
 def logout(request):
     response = HttpResponse(mimetype='application/json')
@@ -82,7 +86,6 @@ def logout(request):
 # =================
 # = register view =
 # =================
-
 @never_cache
 @csrf_exempt
 def register(request):
@@ -126,7 +129,6 @@ def register(request):
 # =============
 # = info View =
 # =============
-
 @never_cache
 def info(request):
     serializer = serializers.get_serializer("json")()
@@ -138,7 +140,6 @@ def info(request):
 # =====================================================
 # = listAccounts should be limeted to superusers only =
 # =====================================================
-
 @never_cache
 def listAccounts(request):
     serializer = serializers.get_serializer("json")()
