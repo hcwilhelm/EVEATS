@@ -17,6 +17,7 @@ settings.py
 .idear/**/*
 .project
 .pydevproject
+.xCodeSupport/**/*
 
 # celerybeat #
 ##############

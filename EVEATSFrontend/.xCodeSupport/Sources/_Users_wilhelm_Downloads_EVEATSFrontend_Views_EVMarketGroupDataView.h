@@ -1,7 +1,0 @@
-
-@interface EVMarketGroupDataView : NSView
-{
-
-}
-
-@end

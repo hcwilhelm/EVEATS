@@ -1,7 +1,0 @@
-
-@interface EVMenuItem : NSMenuItem
-{
-
-}
-
-@end

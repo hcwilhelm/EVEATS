@@ -1,7 +1,0 @@
-
-@interface EVTableColumnIconView : NSView
-{
-
-}
-
-@end

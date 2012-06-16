@@ -1,7 +1,0 @@
-
-@interface EVMarketGroupOutlineView : NSOutlineView
-{
-
-}
-
-@end

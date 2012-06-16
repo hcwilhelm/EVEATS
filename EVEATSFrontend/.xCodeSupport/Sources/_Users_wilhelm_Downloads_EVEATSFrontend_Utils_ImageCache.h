@@ -1,7 +1,0 @@
-
-@interface ImageCache : NSObject
-{
-
-}
-
-@end

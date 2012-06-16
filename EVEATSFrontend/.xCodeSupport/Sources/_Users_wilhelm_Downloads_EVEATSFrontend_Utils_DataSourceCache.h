@@ -1,7 +1,0 @@
-
-@interface DataSourceCache : NSObject
-{
-
-}
-
-@end
