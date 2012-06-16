@@ -8,10 +8,6 @@
 ###############
 .DS_Store
 
-# Sensetive Data #
-##################
-settings.py
-
 # IDE Stuff #
 #############
 .idear/**/*

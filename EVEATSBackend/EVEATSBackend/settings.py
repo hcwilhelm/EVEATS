@@ -12,19 +12,18 @@ MANAGERS = ADMINS
 DATABASES = {
   'default': {
     'ENGINE'    : 	'django.db.backends.mysql', 	# Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-    'NAME'      : 	'',                         	# Or path to database file if using sqlite3.
-    'USER'      : 	'',                         	# Not used with sqlite3.
-    'PASSWORD'  :   '',	                        	# Not used with sqlite3.
+    'NAME'      : 	'c0_eveats',                  # Or path to database file if using sqlite3.
+    'USER'      : 	'c0_eveats',                  # Not used with sqlite3.
+    'PASSWORD'  :   'eveats',	                    # Not used with sqlite3.
     'HOST'      : 	'localhost',                	# Set to empty string for localhost. Not used with sqlite3.
     'PORT'      : 	'3306',                     	# Set to empty string for default. Not used with sqlite3.
     'OPTIONS': {
-      'init_command': 'SET storage_engine=INNODB',
+      'init_command': 'SET storage_engine=INNODB;',
     }
   },
 }
 
 # EVE API Connection URL 
-
 EVE_API_HOST = "api.eveonline.com"
 EVE_API_PORT = 443
 
@@ -75,7 +74,7 @@ STATICFILES_DIRS = (
   # Put strings here, like "/home/html/static" or "C:/www/django/static".
   # Always use forward slashes, even on Windows.
   # Don't forget to use absolute paths, not relative paths.
-  "/path/to/your/EVEATSFrontend",
+  "/home/christian/Workspace/EVEATS/EVEATSFrontend/",
 )
 
 # List of finder classes that know how to find static files in
@@ -101,19 +100,19 @@ CACHES = {
   'default': {
     'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
     'LOCATION': '127.0.0.1:11211',
+    'KEY_PREFIX': 'eveatsdev'
   }
 }
 
 # Celery : Distributed Task Queue
 import djcelery
-from datetime import timedelta
 djcelery.setup_loader()
 
 BROKER_HOST                   = "localhost"
 BROKER_PORT                   = 5672
-BROKER_USER                   = ""
-BROKER_PASSWORD               = ""
-BROKER_VHOST                  = ""
+BROKER_USER                   = "eveats"
+BROKER_PASSWORD               = "eveats"
+BROKER_VHOST                  = "eveatsdev"
 
 CELERYD_CONCURRENCY           = 64
 CELERYD_PREFETCH_MULTIPLIER   = 1
