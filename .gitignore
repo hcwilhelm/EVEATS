@@ -3,16 +3,20 @@
 
 *.pyc
 ._*.*
+
+# MacOS Stuff #
+###############
 .DS_Store
 
 # Sensetive Data #
 ##################
-
 settings.py
 
 # IDE Stuff #
 #############
 .idear/**/*
+.project
+.pydevproject
 
 # celerybeat #
 ##############
@@ -22,4 +26,3 @@ celerybeat.pid
 # EVE Static image dump#
 ########################
 EVEATSFrontend/Resources/EveImageDump/**/*
-
