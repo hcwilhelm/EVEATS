@@ -23,3 +23,7 @@ celerybeat.pid
 # EVE Static image dump#
 ########################
 EVEATSFrontend/Resources/EveImageDump/**/*
+
+# Logging directory #
+#####################
+EVEATSBackend/logs/
