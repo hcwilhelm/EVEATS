@@ -1,6 +1,6 @@
 This module provides the static dump to EVEATS
 
 Installation:
- - Get latest dump from here: http://www.fuzzwork.co.uk/dump/
+ - Get latest dump from here: http://evedump.icyone.net/ or http://www.fuzzwork.co.uk/dump/
  - Import it into your evedb database
  - Configure database connection in settings.py
