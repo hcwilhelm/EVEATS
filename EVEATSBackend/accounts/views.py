@@ -14,17 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 # import the logging stuff
 from common.helper import func_logger as logger
-
-# =======================
-# = ErrorMessage Object =
-# =======================
-class ErrorMessage(object):
-    def __init__(self, success, message):
-        self.success = success
-        self.message = message
-    
-    def json(self):
-        return simplejson.dumps({'success':self.success, 'message':self.message})
+from common.views import JSONResponse 
 
 # ==============
 # = login view =
@@ -43,7 +33,7 @@ def login(request):
     auth.logout(request);
         
     if 'username' not in request.POST or 'password' not in request.POST:
-        message = ErrorMessage(False, "Missing POST parameter!")
+        message = JSONResponse(success=False, message="Missing POST parameter!")
         response.write(message.json())
         logger.error("Invalid login: Username or password not set.")
         return response
@@ -51,21 +41,21 @@ def login(request):
     user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
     
     if user is None:
-        message = ErrorMessage(False, "User not  found! Register first")
+        message = JSONResponse(success=False, message="Login failed!")
         response.write(message.json());
-        logger.warning("User %s tried to login, but account does not exists!" % request.POST['username'])
+        logger.warning("User %s tried to login, but login failed (wrong password or account does not exists)" % request.POST['username'])
         return response     
     
     else:
         if user.is_active:
             auth.login(request, user)
-            message = ErrorMessage(True, "Login successful")
+            message = JSONResponse(success=True, message="Login successful")
             response.write(message.json())
             logger.info("Login successful for user %s" % user)
             return response    
       
         else:
-            message = ErrorMessage(False, "User not active! Activate your account first")
+            message = JSONResponse(success=False, message="User not active! Activate your account first")
             response.write(message.json())
             logger.warning("User %s tried to login, but is not activated yet!" % user)
             return response
@@ -81,12 +71,12 @@ def logout(request):
     if request.user.is_authenticated():
         username = request.user.username
         auth.logout(request)
-        message = ErrorMessage(True, "Logout successful")
+        message = JSONResponse(success=True, message="Logout successful")
         response.write(message.json())
         logger.info("User %s logged out" % username)
         
     else:
-        message = ErrorMessage(False, "You must login before you logout")
+        message = JSONResponse(success=False, message="You must login before you logout")
         response.write(message.json())
         logger.error("User tried to logout but wasn't logged in.")
     
@@ -109,27 +99,27 @@ def register(request):
     response = HttpResponse(mimetype='application/json')
     
     if 'email' not in request.POST or 'username' not in request.POST or 'password' not in request.POST or 'confirm' not in request.POST:
-        message = ErrorMessage(False, "Missing POST paramater! ")
+        message = JSONResponse(success=False, message="Missing POST paramater! ")
         response.write(message.json())
         return response
     
     if request.POST['username'] == "" or request.POST['password'] == "":
-        message = ErrorMessage(False, "Username and Password can't be empty")
+        message = JSONResponse(success=False, message="Username and Password can't be empty")
         response.write(message.json())
         return response
     
     if User.objects.filter(username=request.POST['username']).exists():
-        message = ErrorMessage(False, "Username already exists!")
+        message = JSONResponse(success=False, message="Username already exists!")
         response.write(message.json())
         return response
     
     if not email_re.match(request.POST['email']):
-        message = ErrorMessage(False, "Email dosen't look like a valid email address")
+        message = JSONResponse(success=False, message="Email dosen't look like a valid email address")
         response.write(message.json())
         return response
     
     if not request.POST['password'] == request.POST['confirm']:
-        message = ErrorMessage(False, "Password confirm must be equal to password")
+        message = JSONResponse(success=False, message="Password confirm must be equal to password")
         response.write(message.json())
         return response
     
@@ -139,7 +129,7 @@ def register(request):
     user.is_active = True
     user.save()
      
-    message = ErrorMessage(True, "User created")
+    message = JSONResponse(success=True, message="User created")
     response.write(message.json())
     return response
 
