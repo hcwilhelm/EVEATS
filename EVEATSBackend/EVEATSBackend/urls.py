@@ -47,7 +47,7 @@ urlpatterns = patterns('',
     url(r'^eve/characterAssetsByMarketGroup/(?P<charID>\d+)/$', 'eve.views.characterAssetsByMarketGroup'),
     url(r'^eve/corporationAssetsByMarketGroup/(?P<corpID>\d+)/$', 'eve.views.corporationAssetsByMarketGroup'),
     
-    url(r'^eve/characterAssetsByMarketGroup/(?P<charID>\d+)/(?P<marketGroupID>\d+)$', 'eve.views.characterAssetsByMarketGroup'),
+    url(r'^eve/characterAssetsByMarketGroup/(?P<charID>\d+)/(?P<marketGroupID>\d+)$', 'eve.views.character_assets_by_market_group'),
     url(r'^eve/corporationAssetsByMarketGroup/(?P<corpID>\d+)/(?P<marketGroupID>\d+)$', 'eve.views.corporationAssetsByMarketGroup'),
     
     url(r'^eve/characterAssetsByTypeName/(?P<charID>\d+)/(?P<typeName>[\w\ ]+)$', 'eve.views.characterAssetsByTypeName'),
@@ -57,9 +57,9 @@ urlpatterns = patterns('',
     url(r'^eve/corporationAssetsDetailTree/(?P<corpID>\d+)/(?P<typeID>\d+)/(?P<locationID>\d+)/$', 'eve.views.corporationAssetsDetailTree'),
     
     # evedb app
-    url(r'^evedb/invType/(?P<typeID>\d+)/$', 'evedb.views.invType'),
-    url(r'^evedb/invMarketGroup/(?P<marketGroupID>\d+)/$', 'evedb.views.invMarketGroup'),
-    url(r'^evedb/invMarketGroupTree/$', 'evedb.views.invMarketGroupTree'),
+    url(r'^evedb/invType/(?P<typeID>\d+)/$', 'evedb.views.inv_type'),
+    url(r'^evedb/invMarketGroup/(?P<marketGroupID>\d+)/$', 'evedb.views.inv_market_group'),
+    url(r'^evedb/invMarketGroupTree/$', 'evedb.views.inv_market_group_tree'),
     
     # common app
     url(r'^common/authentificationError/$', 'common.views.authentificationError'),

@@ -8,17 +8,18 @@ from django.utils                   import simplejson
 from django.db.models.query         import QuerySet
 from django.db.models.query         import EmptyQuerySet
 from django.core.serializers.json   import DjangoJSONEncoder
+from common.helper                  import func_logger as logger
 
 class HandleQuerySets(DjangoJSONEncoder):
-  def default(self, obj):
-    
-    if type(obj) == QuerySet:
-      return serializers.serialize("python", obj, ensure_ascii=False)
-    
-    if type(obj) == EmptyQuerySet:
-      return serializers.serialize("python", obj, ensure_ascii=False)
-    
-    return DjangoJSONEncoder.default(self, obj)
+    def default(self, obj):
+      
+        if type(obj) == QuerySet:
+            return serializers.serialize("python", obj, ensure_ascii=False)
+        
+        if type(obj) == EmptyQuerySet:
+            return serializers.serialize("python", obj, ensure_ascii=False)
+        
+        return DjangoJSONEncoder.default(self, obj)
 
 #
 # The JSONResponse class is used in every view !
@@ -27,32 +28,32 @@ class HandleQuerySets(DjangoJSONEncoder):
 # to inform the Frontend that some long running work is in progress.
 
 class JSONResponse:
-  def __init__(self, success=True, message=None, result=None, taskID=None):
-    self.success = success
-    self.message = message
-    self.result = result
-    self.taskID = taskID
-
-  def json(self):
-    return simplejson.dumps(
-        {"success": self.success, "message": self.message, "result": self.result, "taskID": self.taskID},
-      cls=HandleQuerySets, indent=2)
+    def __init__(self, success=True, message=None, result=None, taskID=None):
+        self.success = success
+        self.message = message
+        self.result = result
+        self.taskID = taskID
+    
+    def json(self):
+        return simplejson.dumps(
+            {"success": self.success, "message": self.message, "result": self.result, "taskID": self.taskID},
+            cls=HandleQuerySets, indent=2)
 
 
 def authentificationError(request):
-  response = HttpResponse(mimetype="application/json")
-
-  jsonResponse = JSONResponse(success=False, message="You are not logged in")
-  response.write(jsonResponse.json())
-
-  return response
+    response = HttpResponse(mimetype="application/json")
+    
+    jsonResponse = JSONResponse(success=False, message="You are not logged in")
+    response.write(jsonResponse.json())
+    
+    return response
 
 def httpPostTest(request):
-  response = HttpResponse(mimetype="application/json")
-  
-  result = {"p1":request.POST["p1"], "p2":request.POST["p2"]}
-  
-  jsonResponse = JSONResponse(success=True, result=result)
-  response.write(jsonResponse.json())
-
-  return response
+    response = HttpResponse(mimetype="application/json")
+    
+    result = {"p1":request.POST["p1"], "p2":request.POST["p2"]}
+    
+    jsonResponse = JSONResponse(success=True, result=result)
+    response.write(jsonResponse.json())
+    
+    return response

@@ -19,7 +19,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 
 from celery.task.sets import TaskSet
-
+from common.helper import func_logger as logger
 # =============================================
 # = I needed to increese the recursion limit  =
 # =============================================
@@ -259,35 +259,35 @@ def corporation_permission_required(function):
 
 @login_required(login_url="/common/authentificationError")
 @character_permission_required
-def characterAssetsByMarketGroup(request, charID, marketGroupID=None):
-  response = HttpResponse(mimetype="application/json")
-
-  char = Character.objects.get(pk=charID)
-  
-  expand = lambda obj: {
-    "typeID":obj['typeID'], 
-    "typeName": invTypes.objects.get(pk=obj['typeID']).typeName,
-    "locationName":mapDenormalize.objects.get(pk=obj['locationID']).itemName,
-    "locationID":obj['locationID'],
-    "quantity":obj['total'],
-  }
-  
-  if marketGroupID == None:
-    assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).values('typeID','locationID').annotate(total = Sum('quantity')).order_by('-total')
+def character_assets_by_market_group(request, charID, marketGroupID=None):
+    response = HttpResponse(mimetype="application/json")
+    logger.debug("User %s request assets for character %s by market group %s" % (request.user.username, charID, marketGroupID))
+    char = Character.objects.get(pk=charID)
     
-    result = [expand(x) for x in assets]
-    jsonResponse = JSONResponse(success=True, result=result)
-    response.write(jsonResponse.json())
-  
-  else:
-    marketGroup = invMarketGroups.objects.get(pk=marketGroupID)
-    assets = char.assetList.asset_set.filter(typeID__marketGroupID__in = marketGroup.findMarketGroupIDs()).values('typeID','locationID').annotate(total = Sum('quantity')).order_by('-total')
+    expand = lambda obj: {
+        "typeID":obj['typeID'], 
+        "typeName": invTypes.objects.get(pk=obj['typeID']).typeName,
+        "locationName":mapDenormalize.objects.get(pk=obj['locationID']).itemName,
+        "locationID":obj['locationID'],
+        "quantity":obj['total'],
+    }
     
-    result = [expand(x) for x in assets]
-    jsonResponse = JSONResponse(success=True, result=result)
-    response.write(jsonResponse.json())
-
-  return response
+    if marketGroupID == None:
+        assets = char.assetList.asset_set.filter(typeID__marketGroupID = marketGroupID).values('typeID','locationID').annotate(total = Sum('quantity')).order_by('-total')
+        
+        result = [expand(x) for x in assets]
+        jsonResponse = JSONResponse(success=True, result=result)
+        response.write(jsonResponse.json())
+    
+    else:
+        marketGroup = invMarketGroups.objects.get(pk=marketGroupID)
+        assets = char.assetList.asset_set.filter(typeID__marketGroupID__in = marketGroup.findMarketGroupIDs()).values('typeID','locationID').annotate(total = Sum('quantity')).order_by('-total')
+        
+        result = [expand(x) for x in assets]
+        jsonResponse = JSONResponse(success=True, result=result)
+        response.write(jsonResponse.json())
+    
+    return response
   
 @login_required(login_url="/common/authentificationError")
 @corporation_permission_required

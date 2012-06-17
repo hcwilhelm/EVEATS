@@ -19,12 +19,6 @@ from lxml import etree
 import urllib
 from common.tasks import locktask
 
-# ===========================================================================
-# = Logging                                                                 =
-# ===========================================================================
-import logging
-logger = logging.getLogger(__name__)
-
 # ===================================
 # = Update Character from EVE API   =
 # ===================================
@@ -118,7 +112,8 @@ def updateConquerableStations():
 @task
 @locktask
 def updateCharacter(character_id):
-  logger.debug("running updateCharacter for characterId %s" % character_id)
+  logger = updateCharacter.get_logger()
+  logger.info("Running updateCharacter for characterId %s" % character_id)
 
   character = Character.objects.get(pk=character_id)
 
@@ -143,13 +138,13 @@ def updateCharacter(character_id):
       character.save()
 
     elif errorCode == "522":
-      logging.warning("Got errorcode 522 for characterID '%s' (Name: '%s') - setting cachedUntil +1day" % (character.characterID, character.characterName))
+      logger.warning("Got errorcode 522 for characterID '%s' (Name: '%s') - setting cachedUntil +1day" % (character.characterID, character.characterName))
 
       character.cachedUntil = datetime.datetime.utcnow() + datetime.timedelta(days=1)
       character.save()
 
     else:
-      logging.error("Got this error from EVE API: '%s' - Code '%s' - characterID '%s' - characterName '%s'" % (errorMessage, errorCode, character.characterID, character.characterName))
+      logger.error("Got this error from EVE API: '%s' - Code '%s' - characterID '%s' - characterName '%s'" % (errorMessage, errorCode, character.characterID, character.characterName))
 
   # ============
   # = No error =
@@ -194,6 +189,7 @@ def updateCharacter(character_id):
 @task
 @locktask
 def updateCorporation(corporation_id):
+  logger = updateCorporation.get_logger()
   logger.debug("running updateCorporation for corporationId %s" % corporation_id)
   print "updateCorporation : " + str(corporation_id)
 
