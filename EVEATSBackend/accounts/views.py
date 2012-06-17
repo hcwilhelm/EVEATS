@@ -12,20 +12,19 @@ from django.core.context_processors import csrf
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.csrf import csrf_exempt
 
-# import the logging library
-import logging
-logger = logging.getLogger(__name__)
+# import the logging stuff
+from common.helper import func_logger as logger
 
 # =======================
 # = ErrorMessage Object =
 # =======================
 class ErrorMessage(object):
-    def __init__(self, success, message):
-        self.success = success
-        self.message = message
-    
-    def json(self):
-        return simplejson.dumps({'success':self.success, 'message':self.message})
+  def __init__(self, success, message):
+    self.success = success
+    self.message = message
+  
+  def json(self):
+    return simplejson.dumps({'success':self.success, 'message':self.message})
 
 # ==============
 # = login view =
@@ -70,18 +69,21 @@ def login(request):
 # ===============
 @never_cache
 def logout(request):
-    response = HttpResponse(mimetype='application/json')
-    
-    if request.user.is_authenticated():
-        auth.logout(request)
-        message = ErrorMessage(True, "Logout successful")
-        response.write(message.json())
-        
-    else:
-        message = ErrorMessage(False, "Login befor you logout")
-        response.write(message.json())
-    
-    return response
+  response = HttpResponse(mimetype='application/json')
+  
+  if request.user.is_authenticated():
+    username = request.user.username
+    auth.logout(request)
+    message = ErrorMessage(True, "Logout successful")
+    response.write(message.json())
+    logger.info("User %s logged out" % username)
+      
+  else:
+    message = ErrorMessage(False, "You must login before you logout")
+    response.write(message.json())
+    logger.error("User tried to logout but wasn't logged in.")
+  
+  return response
 
 # =================
 # = register view =
@@ -89,63 +91,63 @@ def logout(request):
 @never_cache
 @csrf_exempt
 def register(request):
-    response = HttpResponse(mimetype='application/json')
+  response = HttpResponse(mimetype='application/json')
 
-    if 'email' not in request.POST or 'username' not in request.POST or 'password' not in request.POST or 'confirm' not in request.POST:
-        message = ErrorMessage(False, "Missing POST paramater! Usage: ?email=&username=&password=&confirm=")
-        response.write(message.json())
-        return response
-    
-    if request.POST['username'] == "" or request.POST['password'] == "":
-        message = ErrorMessage(False, "Username and Password can't be empty")
-        response.write(message.json())
-        return response
-
-    if User.objects.filter(username=request.POST['username']).exists():
-        message = ErrorMessage(False, "Username allready exists!")
-        response.write(message.json())
-        return response
- 
-    if not email_re.match(request.POST['email']):
-        message = ErrorMessage(False, "Email dosen't look like a valid email address")
-        response.write(message.json())
-        return response
-
-    if not request.POST['password'] == request.POST['confirm']:
-        message = ErrorMessage(False, "Password confirm must be equal to password")
-        response.write(message.json())
-        return response
-
-    user = User.objects.create_user(request.POST['username'], request.POST['email'], request.POST['password'])
-    user.is_superuser = False
-    user.is_stuff = False
-    user.is_active = True
-    user.save()
-    
-    message = ErrorMessage(True, "User created")
+  if 'email' not in request.POST or 'username' not in request.POST or 'password' not in request.POST or 'confirm' not in request.POST:
+    message = ErrorMessage(False, "Missing POST paramater! Usage: ?email=&username=&password=&confirm=")
     response.write(message.json())
     return response
+  
+  if request.POST['username'] == "" or request.POST['password'] == "":
+    message = ErrorMessage(False, "Username and Password can't be empty")
+    response.write(message.json())
+    return response
+
+  if User.objects.filter(username=request.POST['username']).exists():
+    message = ErrorMessage(False, "Username allready exists!")
+    response.write(message.json())
+    return response
+
+  if not email_re.match(request.POST['email']):
+    message = ErrorMessage(False, "Email dosen't look like a valid email address")
+    response.write(message.json())
+    return response
+
+  if not request.POST['password'] == request.POST['confirm']:
+    message = ErrorMessage(False, "Password confirm must be equal to password")
+    response.write(message.json())
+    return response
+
+  user = User.objects.create_user(request.POST['username'], request.POST['email'], request.POST['password'])
+  user.is_superuser = False
+  user.is_stuff = False
+  user.is_active = True
+  user.save()
+   
+  message = ErrorMessage(True, "User created")
+  response.write(message.json())
+  return response
 
 # =============
 # = info View =
 # =============
 @never_cache
 def info(request):
-    serializer = serializers.get_serializer("json")()
-    response = HttpResponse(mimetype='application/json')
-
-    serializer.serialize([request.user], stream=response)
-    return response
+  serializer = serializers.get_serializer("json")()
+  response = HttpResponse(mimetype='application/json')
+  
+  serializer.serialize([request.user], stream=response)
+  return response
 
 # =====================================================
-# = listAccounts should be limeted to superusers only =
+# = list_accounts should be limeted to superusers only =
 # =====================================================
 @never_cache
-def listAccounts(request):
-    serializer = serializers.get_serializer("json")()
-    response = HttpResponse(mimetype='application/json')
-
-    result = User.objects.all()
-
-    serializer.serialize(result, stream=response)
-    return response
+def list_accounts(request):
+  serializer = serializers.get_serializer("json")()
+  response = HttpResponse(mimetype='application/json')
+  
+  result = User.objects.all()
+  
+  serializer.serialize(result, stream=response)
+  return response
