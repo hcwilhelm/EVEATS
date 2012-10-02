@@ -277,8 +277,13 @@ class dgmEffects(models.Model):
   def __unicode__(self):
     return unicode(self.effectID)
 
+#
+# Altered table cause Django dosen't support combined primary key
+#
+
 class dgmTypeAttributes(models.Model):
-  typeID                              = models.IntegerField(primary_key=True)
+  typeAttributeID                     = models.IntegerField(primary_key=True)
+  typeID                              = models.ForeignKey('invTypes', db_column='typeID', null=True)
   attributeID                         = models.ForeignKey('dgmAttributeTypes', db_column='attributeID', null=True)
   valueInt                            = models.IntegerField(null=True)
   valueFloat                          = models.FloatField(null=True)
@@ -289,9 +294,15 @@ class dgmTypeAttributes(models.Model):
     
   def __unicode__(self):
     return unicode(self.typeID)
-    
+
+
+#
+# Altered table cause Django dosen't support combined primary key
+#    
+
 class dgmTypeEffects(models.Model):
-  typeID                              = models.ForeignKey('invTypes', db_column='npcUsageChanceAttributeID', null=True)
+  typeEffectID                        = models.IntegerField(primary_key=True)
+  typeID                              = models.ForeignKey('invTypes', db_column='typeID', null=True)
   effectID                            = models.ForeignKey('dgmEffects', db_column='effectID', null=True)
   isDefault                           = models.NullBooleanField()
   

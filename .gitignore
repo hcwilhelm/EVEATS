@@ -26,4 +26,4 @@ EVEATSFrontend/Resources/EveImageDump/**/*
 
 # Logging directory #
 #####################
-EVEATSBackend/logs/
+EVEATSBackend/logs/*
