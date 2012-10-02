@@ -7,7 +7,9 @@ from functools import wraps
 # = Import django modules                                                   =
 # ===========================================================================
 from django.core.cache import cache
+from celery.utils.log import get_task_logger
 
+logger = get_task_logger(__name__)
 # ===========================================================================
 # = Decorator to allow only one update task for each object at time         =
 # ===========================================================================
@@ -23,12 +25,12 @@ def locktask(function):
         
         if acquire_lock(): 
             try:
-                #logger.debug("Locked task: %s" % lock_id)
+                logger.debug("Locked task: %s" % lock_id)
                 return function(object, *args, **kwargs)
             #except Exception as ex:
-                #logger.error("Exception in Task: %s" % ex)
+                logger.error("Exception in Task: %s" % ex)
             finally:
                 release_lock()
-                #logger.debug("Unlocked task: %s" % lock_id)
+                logger.debug("Unlocked task: %s" % lock_id)
     
     return wrapper
