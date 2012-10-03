@@ -30,4 +30,5 @@ EVEATSBackend/logs/*
 
 # Python virtual env #
 ######################
+EVEATSBackend/bootstrap.py
 EVEATSBackend/env/*
