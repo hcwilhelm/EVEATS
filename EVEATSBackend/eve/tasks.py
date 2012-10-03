@@ -7,10 +7,10 @@ from helper import getXMLFromEveAPI
 from django.db import transaction
 
 # ===========================================================================
-# = Import celery modules                                                   =
+# = Import celery modules =
 # ===========================================================================
-from celery.task import Task
-from celery.task import task
+from celery import Task
+from celery import task
 
 # ===========================================================================
 # = Import general python modules                                           =
@@ -23,18 +23,18 @@ from common.tasks import locktask
 # = Update Character from EVE API   =
 # ===================================
 class UpdateAllCharacters(Task):
-  def run(self):
-    allActiveChars = Character.objects.filter(isDeleted=False)
-    logger.info("Got %s characters from database" % allActiveChars.count())
+    def run(self):
+        allActiveChars = Character.objects.filter(isDeleted=False)
+        logger.info("Got %s characters from database" % allActiveChars.count())
 
-    for currentChar in allActiveChars:
-      if currentChar.expired():
-        logger.info("Updating character '%s'" % currentChar.characterName)
-        updateCharacter.delay(currentChar.pk)
-      else:
-        logger.info("Not updating character '%s'" % currentChar.characterName)
+        for currentChar in allActiveChars:
+            if currentChar.expired():
+                logger.info("Updating character '%s'" % currentChar.characterName)
+                updateCharacter.delay(currentChar.pk)
+            else:
+                logger.info("Not updating character '%s'" % currentChar.characterName)
 
-    return True
+        return True
 
 # ===================================
 # = Update Conquerable Stations     =
@@ -42,68 +42,68 @@ class UpdateAllCharacters(Task):
 
 @task
 def updateConquerableStations():
-  logger = updateConquerableStations.get_logger()
-  logger.info("Updateing all onquerable stations!")
+    logger = updateConquerableStations.get_logger()
+    logger.info("Updateing all onquerable stations!")
 
-  action  = "/eve/ConquerableStationList.xml.aspx"
-  xml     = getXMLFromEveAPI(action=action, params=None)
+    action  = "/eve/ConquerableStationList.xml.aspx"
+    xml     = getXMLFromEveAPI(action=action, params=None)
 
-  # ===================
-  # = Error handling  =
-  # ===================
+    # ===================
+    # = Error handling  =
+    # ===================
 
-  error = xml.find("error")
+    error = xml.find("error")
 
-  if error is not None:
-    errorCode     = error.get('code')
-    errorMessage  = error.text
+    if error is not None:
+        errorCode     = error.get('code')
+        errorMessage  = error.text
 
-    logger.warning("Error fetching ConquerableStationList from API: errorCode: '%s' errorMessage '%s'" % (errorCode, errorMessage))
+        logger.warning("Error fetching ConquerableStationList from API: errorCode: '%s' errorMessage '%s'" % (errorCode, errorMessage))
 
-    return False
+        return False
 
-  # ============
-  # = No Error =
-  # ============
+    # ============
+    # = No Error =
+    # ============
 
-  cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
+    cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
 
-  allOutposts = xml.findall("result/rowset[@name='outposts']/row")
-  logger.info("Fetched %s conquerable stations from EVE API" % len(allOutposts))
+    allOutposts = xml.findall("result/rowset[@name='outposts']/row")
+    logger.info("Fetched %s conquerable stations from EVE API" % len(allOutposts))
 
-  for outpost in allOutposts:
-    stationID         = outpost.get('stationID')
-    stationName       = outpost.get('stationName')
-    stationTypeID     = outpost.get('stationTypeID')
-    solarSystemID     = outpost.get('solarSystemID')
-    corporationID     = outpost.get('corporationID')
+    for outpost in allOutposts:
+        stationID         = outpost.get('stationID')
+        stationName       = outpost.get('stationName')
+        stationTypeID     = outpost.get('stationTypeID')
+        solarSystemID     = outpost.get('solarSystemID')
+        corporationID     = outpost.get('corporationID')
 
-    logger.debug("Processing station '%s' with ID '%s'" % (stationName, stationID))
+        logger.debug("Processing station '%s' with ID '%s'" % (stationName, stationID))
 
-    corporation, corpCreated = Corporation.objects.get_or_create(pk=corporationID)
+        corporation, corpCreated = Corporation.objects.get_or_create(pk=corporationID)
 
-    if corpCreated:
-      updateCorporation.delay(corporation.pk)
+        if corpCreated:
+            updateCorporation.delay(corporation.pk)
 
-    station, created = ConquerableStation.objects.get_or_create(
-      stationID       = stationID,
-      stationName     = stationName,
-      stationType_id  = stationTypeID,
-      solarSystem_id  = solarSystemID,
-      corporation     = corporation
-    )
+        station, created = ConquerableStation.objects.get_or_create(
+          stationID       = stationID,
+          stationName     = stationName,
+          stationType_id  = stationTypeID,
+          solarSystem_id  = solarSystemID,
+          corporation     = corporation
+        )
 
-    if not created:
-      station.cachedUntil = cachedUntil
-      station.corporation = corporation
-      station.save()
+        if not created:
+            station.cachedUntil = cachedUntil
+            station.corporation = corporation
+            station.save()
 
-  for station in ConquerableStation.objects.all():
-    if station.expired():
-      station.delete()
-      logger.info("Deleting '%s' outdated conquerable Stations" % station.pk)
+    for station in ConquerableStation.objects.all():
+        if station.expired():
+            station.delete()
+            logger.info("Deleting '%s' outdated conquerable Stations" % station.pk)
 
-  return True
+    return True
 
 # ============================================================================
 # = task updateCharacter                                                     =
@@ -112,75 +112,75 @@ def updateConquerableStations():
 @task
 @locktask
 def updateCharacter(character_id):
-  logger = updateCharacter.get_logger()
-  logger.info("Running updateCharacter for characterId %s" % character_id)
+    logger = updateCharacter.get_logger()
+    logger.info("Running updateCharacter for characterId %s" % character_id)
 
-  character = Character.objects.get(pk=character_id)
+    character = Character.objects.get(pk=character_id)
 
-  action = "/eve/CharacterInfo.xml.aspx"
-  params = urllib.urlencode({'characterID':character.characterID})
-  xml = getXMLFromEveAPI(action=action, params=params)
+    action = "/eve/CharacterInfo.xml.aspx"
+    params = urllib.urlencode({'characterID':character.characterID})
+    xml = getXMLFromEveAPI(action=action, params=params)
 
-  error = xml.find("error")
+    error = xml.find("error")
 
-  # ===================
-  # = Error handling  =
-  # ===================
+    # ===================
+    # = Error handling  =
+    # ===================
 
-  if error is not None:
-    errorCode     = error.get('code')
-    errorMessage  = error.text
+    if error is not None:
+        errorCode     = error.get('code')
+        errorMessage  = error.text
 
-    if errorCode == "105":
-      logger.warning("Marking character '%s' with id '%s' as deleted, got errorcode 105 from EVE API" % (character.characterName, character.characterID))
+        if errorCode == "105":
+            logger.warning("Marking character '%s' with id '%s' as deleted, got errorcode 105 from EVE API" % (character.characterName, character.characterID))
 
-      character.isDeleted = True
-      character.save()
+            character.isDeleted = True
+            character.save()
 
-    elif errorCode == "522":
-      logger.warning("Got errorcode 522 for characterID '%s' (Name: '%s') - setting cachedUntil +1day" % (character.characterID, character.characterName))
+        elif errorCode == "522":
+            logger.warning("Got errorcode 522 for characterID '%s' (Name: '%s') - setting cachedUntil +1day" % (character.characterID, character.characterName))
 
-      character.cachedUntil = datetime.datetime.utcnow() + datetime.timedelta(days=1)
-      character.save()
+            character.cachedUntil = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+            character.save()
+
+        else:
+            logger.error("Got this error from EVE API: '%s' - Code '%s' - characterID '%s' - characterName '%s'" % (errorMessage, errorCode, character.characterID, character.characterName))
+
+    # ============
+    # = No error =
+    # ============
 
     else:
-      logger.error("Got this error from EVE API: '%s' - Code '%s' - characterID '%s' - characterName '%s'" % (errorMessage, errorCode, character.characterID, character.characterName))
+        character.characterName     = xml.find("result/characterName").text
+        character.securityStatus    = xml.find("result/securityStatus").text
+        character.bloodline         = xml.find("result/bloodline").text
+        character.race              = xml.find("result/race").text
+        character.cachedUntil       = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
 
-  # ============
-  # = No error =
-  # ============
+        character.save()
 
-  else:
-    character.characterName     = xml.find("result/characterName").text
-    character.securityStatus    = xml.find("result/securityStatus").text
-    character.bloodline         = xml.find("result/bloodline").text
-    character.race              = xml.find("result/race").text
-    character.cachedUntil       = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
+        for employment in xml.findall("result/rowset[@name='employmentHistory']/row"):
 
-    character.save()
+            corp, created = Corporation.objects.get_or_create(corporationID=employment.get('corporationID'))
 
-    for employment in xml.findall("result/rowset[@name='employmentHistory']/row"):
+            #
+            # If created we could start an Corporation update job.
+            # Anyways a new created character is always expired so it will be update
+            # by the next query.
+            #
 
-      corp, created = Corporation.objects.get_or_create(corporationID=employment.get('corporationID'))
+            if created:
+                updateCorporation(corp.pk)
 
-      #
-      # If created we could start an Corporation update job.
-      # Anyways a new created character is always expired so it will be update
-      # by the next query.
-      #
+            startDate = datetime.datetime.strptime(employment.get('startDate'), "%Y-%m-%d %H:%M:%S")
 
-      if created:
-        updateCorporation(corp.pk)
+            CharacterEmploymentHistory.objects.get_or_create(character=character, corporation=corp, startDate=startDate)
 
-      startDate = datetime.datetime.strptime(employment.get('startDate'), "%Y-%m-%d %H:%M:%S")
+    # ================
+    # = Update done  =
+    # ================
 
-      CharacterEmploymentHistory.objects.get_or_create(character=character, corporation=corp, startDate=startDate)
-
-  # ================
-  # = Update done  =
-  # ================
-
-  return True
+    return True
 
 # ============================================================================
 # = task updateCorporation                                                   =
@@ -189,65 +189,65 @@ def updateCharacter(character_id):
 @task
 @locktask
 def updateCorporation(corporation_id):
-  logger = updateCorporation.get_logger()
-  logger.debug("running updateCorporation for corporationId %s" % corporation_id)
-  print "updateCorporation : " + str(corporation_id)
+    logger = updateCorporation.get_logger()
+    logger.debug("running updateCorporation for corporationId %s" % corporation_id)
+    print "updateCorporation : " + str(corporation_id)
 
-  corporation = Corporation.objects.get(pk=corporation_id)
+    corporation = Corporation.objects.get(pk=corporation_id)
 
-  action = "/corp/CorporationSheet.xml.aspx"
-  params = urllib.urlencode({'corporationID':corporation.corporationID})
-  xml = getXMLFromEveAPI(action=action, params=params)
+    action = "/corp/CorporationSheet.xml.aspx"
+    params = urllib.urlencode({'corporationID':corporation.corporationID})
+    xml = getXMLFromEveAPI(action=action, params=params)
 
-  # ===================
-  # = Error Handling  =
-  # ===================
+    # ===================
+    # = Error Handling  =
+    # ===================
 
-  error = xml.find("error")
+    error = xml.find("error")
 
-  if error is not None:
-    errorCode     = error.get('code')
-    errorMessage  = error.text
-    print "updateCorporation xml error : " + str(errorCode) + " : " + errorMessage
-    return False
+    if error is not None:
+        errorCode     = error.get('code')
+        errorMessage  = error.text
+        print "updateCorporation xml error : " + str(errorCode) + " : " + errorMessage
+        return False
 
-  # =============
-  # = No Error  =
-  # =============
+    # =============
+    # = No Error  =
+    # =============
 
-  else:
+    else:
 
-    print "updateCorporation xml ok"
+        print "updateCorporation xml ok"
 
-    corporation.corporationName = xml.find("result/corporationName").text
-    corporation.description     = xml.find("result/description").text
+        corporation.corporationName = xml.find("result/corporationName").text
+        corporation.description     = xml.find("result/description").text
 
-    ceo, created = Character.objects.get_or_create(characterID=xml.find("result/ceoID").text)
+        ceo, created = Character.objects.get_or_create(characterID=xml.find("result/ceoID").text)
 
-    if created:
+        if created:
 
-      # we will store the ceo name here for noob corps, those chars are not
-      # fetchable via api so we can't get the name during the update later
-      # and storing chars without names would be very ugly!
+            # we will store the ceo name here for noob corps, those chars are not
+            # fetchable via api so we can't get the name during the update later
+            # and storing chars without names would be very ugly!
 
-      #
-      # NPC characterID's can be identified via the static data dump !
-      #
+            #
+            # NPC characterID's can be identified via the static data dump !
+            #
 
-      print "create ceo"
+            print "create ceo"
 
-      logger.info("Created character with id %s" % ceo.characterID)
-      updateCharacter.delay(ceo.pk)
+            logger.info("Created character with id %s" % ceo.characterID)
+            updateCharacter.delay(ceo.pk)
 
-    corporation.ceo         = ceo
-    corporation.cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
-    corporation.save()
+        corporation.ceo         = ceo
+        corporation.cachedUntil = datetime.datetime.strptime(xml.find("cachedUntil").text, "%Y-%m-%d %H:%M:%S")
+        corporation.save()
 
-  # ================
-  # = Update done  =
-  # ================
+    # ================
+    # = Update done  =
+    # ================
 
-  return True
+    return True
 
 
 # ============================================================================
@@ -262,83 +262,83 @@ def updateCorporation(corporation_id):
 @task
 @locktask
 def updateAPIKey(apiKey_id):
-  print "ImportAPIKeyInfoTask : " + str(apiKey_id)
+    print "ImportAPIKeyInfoTask : " + str(apiKey_id)
 
-  apiKey  = APIKey.objects.get(pk=apiKey_id)
+    apiKey  = APIKey.objects.get(pk=apiKey_id)
 
-  action  = "/account/APIKeyInfo.xml.aspx"
-  params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode})
-  xml     = getXMLFromEveAPI(action, params)
+    action  = "/account/APIKeyInfo.xml.aspx"
+    params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode})
+    xml     = getXMLFromEveAPI(action, params)
 
-  #print etree.tostring(xml)
-  
-  if xml.find("error") != None:
-    apiKey.valid        = False
-    apiKey.cachedUntil  = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
-    apiKey.save()
+    #print etree.tostring(xml)
 
-  else:
-    xml_current = xml.find("currentTime")
-    xml_key     = xml.find("result/key")
-    xml_rowset  = xml.find("result/key/rowset")
-    xml_until   = xml.find("cachedUntil")
+    if xml.find("error") != None:
+        apiKey.valid        = False
+        apiKey.cachedUntil  = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
+        apiKey.save()
 
-    apiKey.valid        = True
-    apiKey.currentTime  = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
-    apiKey.accessMask   = xml_key.get("accessMask")
-    apiKey.accountType  = xml_key.get("type")
-    apiKey.expires      = None if xml_key.get("expires") == "" else datetime.datetime.strptime(xml_key.get("expires"), "%Y-%m-%d %H:%M:%S")
-    apiKey.cachedUntil  = datetime.datetime.strptime(xml_until.text, "%Y-%m-%d %H:%M:%S")
-
-    apiKey.save()
-
-    if apiKey.accountType == "Account" or apiKey.accountType == "Character":
-      for xml_row in xml_rowset.iter("row"):
-
-        character, created = Character.objects.get_or_create(pk=xml_row.get("characterID"))
-
-        if created:
-          updateCharacter.delay(character.pk)
-
-        #
-        # If created we could start an character update job.
-        # Anyways a new created character is always expired so it will be update
-        # by the next query.
-        #
-
-        CharacterAPIKeys.objects.get_or_create(apiKey=apiKey, character=character)
-
-    elif apiKey.accountType == "Corporation":
-      for xml_row in xml_rowset.iter("row"):
-
-        character, created = Character.objects.get_or_create(pk=xml_row.get("characterID"))
-
-        if created:
-          updateCharacter.delay(character.pk)
-
-        #
-        # If created we could start an character update job.
-        # Anyways a new created character is always expired so it will be update
-        # by the next query.
-        #
-
-        corporation, created = Corporation.objects.get_or_create(pk=xml_row.get("corporationID"))
-
-        if created:
-          updateCorporation(corporation.pk)
-
-        #
-        # If created we could start an corporation update job.
-        # Anyways a new created character is always expired so it will be update
-        # by the next query.
-        #
-
-        CorporationAPIKeys.objects.get_or_create(apiKey=apiKey, corporation=corporation, provider=character)
-        
     else:
-      print "WTF"
+        xml_current = xml.find("currentTime")
+        xml_key     = xml.find("result/key")
+        xml_rowset  = xml.find("result/key/rowset")
+        xml_until   = xml.find("cachedUntil")
 
-  return True
+        apiKey.valid        = True
+        apiKey.currentTime  = datetime.datetime.strptime(xml_current.text, "%Y-%m-%d %H:%M:%S")
+        apiKey.accessMask   = xml_key.get("accessMask")
+        apiKey.accountType  = xml_key.get("type")
+        apiKey.expires      = None if xml_key.get("expires") == "" else datetime.datetime.strptime(xml_key.get("expires"), "%Y-%m-%d %H:%M:%S")
+        apiKey.cachedUntil  = datetime.datetime.strptime(xml_until.text, "%Y-%m-%d %H:%M:%S")
+
+        apiKey.save()
+
+        if apiKey.accountType == "Account" or apiKey.accountType == "Character":
+            for xml_row in xml_rowset.iter("row"):
+
+                character, created = Character.objects.get_or_create(pk=xml_row.get("characterID"))
+
+                if created:
+                    updateCharacter.delay(character.pk)
+
+                #
+                # If created we could start an character update job.
+                # Anyways a new created character is always expired so it will be update
+                # by the next query.
+                #
+
+                CharacterAPIKeys.objects.get_or_create(apiKey=apiKey, character=character)
+
+        elif apiKey.accountType == "Corporation":
+            for xml_row in xml_rowset.iter("row"):
+
+                character, created = Character.objects.get_or_create(pk=xml_row.get("characterID"))
+
+                if created:
+                    updateCharacter.delay(character.pk)
+
+                #
+                # If created we could start an character update job.
+                # Anyways a new created character is always expired so it will be update
+                # by the next query.
+                #
+
+                corporation, created = Corporation.objects.get_or_create(pk=xml_row.get("corporationID"))
+
+                if created:
+                    updateCorporation(corporation.pk)
+
+                #
+                # If created we could start an corporation update job.
+                # Anyways a new created character is always expired so it will be update
+                # by the next query.
+                #
+
+                CorporationAPIKeys.objects.get_or_create(apiKey=apiKey, corporation=corporation, provider=character)
+
+        else:
+            print "WTF"
+
+    return True
 
 # ============================================================================
 # = Class ImportAssetListTask                                                =
@@ -362,68 +362,68 @@ def updateAssetList(object_id, type):
     #
     # Check if the object is a Character
     #
-    
+
     if type == "Character":
-      
-      object = Character.objects.get(pk=object_id)
-      
-      #
-      # Check if the object has a related APIKey
-      #
 
-      if not object.apiKeys.all().exists():
-        return False
+        object = Character.objects.get(pk=object_id)
 
-      apiKey  = object.apiKeys.all()[0]
-      char    = object
-      action  = "/char/AssetList.xml.aspx"
-      params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode, 'characterID':char.characterID})
-      
-      xml_root     = getXMLFromEveAPI(action, params)
-      
+        #
+        # Check if the object has a related APIKey
+        #
+
+        if not object.apiKeys.all().exists():
+            return False
+
+        apiKey  = object.apiKeys.all()[0]
+        char    = object
+        action  = "/char/AssetList.xml.aspx"
+        params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode, 'characterID':char.characterID})
+
+        xml_root     = getXMLFromEveAPI(action, params)
+
     #
     # Check if the object is a Corporation
     #
 
     elif type == "Corporation":
 
-      object = Corporation.objects.get(pk=object_id)
+        object = Corporation.objects.get(pk=object_id)
 
-      #
-      # Check if the object has a related APIKey
-      #
+        #
+        # Check if the object has a related APIKey
+        #
 
-      if not object.apiKeys.all().exists():
-        return False
+        if not object.apiKeys.all().exists():
+            return False
 
-      apiKey  = object.apiKeys.all()[0]
-      char    = CorporationAPIKeys.objects.get(apiKey=apiKey, corporation=object).provider
-      action  = "/corp/AssetList.xml.aspx"
-      params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode, 'characterID':char.characterID})
+        apiKey  = object.apiKeys.all()[0]
+        char    = CorporationAPIKeys.objects.get(apiKey=apiKey, corporation=object).provider
+        action  = "/corp/AssetList.xml.aspx"
+        params  = urllib.urlencode({'keyID':apiKey.keyID, 'vCode':apiKey.vCode, 'characterID':char.characterID})
 
-      xml_root     = getXMLFromEveAPI(action, params)
+        xml_root     = getXMLFromEveAPI(action, params)
 
     #
     # Do nothing for all other object types
     #
 
     else:
-      return False
+        return False
 
     #
     # Clean up older assets
     #
 
     if object.assetList != None:
-      object.assetList.asset_set.all().delete()
+        object.assetList.asset_set.all().delete()
 
     #
     # Error Handling
     #
 
     if xml_root.find("error") != None:
-      print xml_root.find("error").text
-      return False
+        print xml_root.find("error").text
+        return False
 
     #
     # No Error
@@ -441,7 +441,7 @@ def updateAssetList(object_id, type):
 
     object.assetList = assetList
     object.save()
-    
+
     bulk    = []
     stack   = [None]
     parent  = None
@@ -451,64 +451,58 @@ def updateAssetList(object_id, type):
     current = 0
 
     for action, element in context:
-      if element.tag == "rowset":
+        if element.tag == "rowset":
 
-        if element.get("name") == "assets":
-          continue
+            if element.get("name") == "assets":
+                continue
 
-        if action == "start" and element.get("name") == "contents":
-          stack.append(parent)
+            if action == "start" and element.get("name") == "contents":
+                stack.append(parent)
 
-        if action == "end" and element.get("name") == "contents":
-          stack.pop()
+            if action == "end" and element.get("name") == "contents":
+                stack.pop()
 
-      if element.tag == "row" and action == "start":
-        asset             = Asset()
-        asset.assetList   = assetList
-        asset.parent      = stack[-1]
-        asset.itemID      = element.get("itemID")
+        if element.tag == "row" and action == "start":
+            asset             = Asset()
+            asset.assetList   = assetList
+            asset.parent      = stack[-1]
+            asset.itemID      = element.get("itemID")
 
-        if element.get("locationID") != None:
+            if element.get("locationID") != None:
 
-          # ==========================================================================
-          # = officeID to stationID conversion refer to eve dev for more information =
-          # ==========================================================================
+                # ==========================================================================
+                # = officeID to stationID conversion refer to eve dev for more information =
+                # ==========================================================================
 
-          locationID = int(element.get("locationID"))
+                locationID = int(element.get("locationID"))
 
-          if locationID >= 66000000 and locationID < 67000000:
-              locationID -= 6000001
-              
-          asset.locationID_id  = locationID
-          
-        else:
-          
-          # ===================================================================
-          # = if there is no location the asset inherits it's parent location =
-          # ===================================================================
-          
-          asset.locationID_id = parent.locationID_id
+                if locationID >= 66000000 and locationID < 67000000:
+                    locationID -= 6000001
 
-        asset.typeID_id   = element.get("typeID")
-        asset.quantity    = element.get("quantity")
-        asset.flag_id     = element.get("flag")
-        asset.singleton   = element.get("singleton")
-        rawQuantity       = element.get("rawQuantity")
+                asset.locationID_id  = locationID
 
-        asset.save()
-        parent = asset
+            else:
+                # ===================================================================
+                # = if there is no location the asset inherits it's parent location =
+                # ===================================================================
 
-        current += 1
-        
-        #
-        # Custom state to expose progress to the Frontend ;)
-        #
-        updateAssetList.update_state(state="PROGRESS", meta={"current": current, "total": int(total)})
-    
+                asset.locationID_id = parent.locationID_id
+
+            asset.typeID_id   = element.get("typeID")
+            asset.quantity    = element.get("quantity")
+            asset.flag_id     = element.get("flag")
+            asset.singleton   = element.get("singleton")
+            rawQuantity       = element.get("rawQuantity")
+
+            asset.save()
+            parent = asset
+
+            current += 1
+
+            #
+            # Custom state to expose progress to the Frontend ;)
+            #
+            updateAssetList.update_state(state="PROGRESS", meta={"current": current, "total": int(total)})
+
     print "ImportAssetListTask : " + str(object.pk) + " : Done"
     return True
-
-
-
-
-

@@ -14,11 +14,11 @@ import httplib
 # =============================================================================
 
 def getXMLFromEveAPI(action, params):
-  header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+    header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
 
-  connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
-  connection.request("GET", action, params, header)
+    connection = httplib.HTTPSConnection(settings.EVE_API_HOST, settings.EVE_API_PORT)
+    connection.request("GET", action, params, header)
 
-  xml = connection.getresponse().read()
-  connection.close()
-  return etree.fromstring(xml)
+    xml = connection.getresponse().read()
+    connection.close()
+    return etree.fromstring(xml)

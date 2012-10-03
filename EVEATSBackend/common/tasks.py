@@ -22,8 +22,8 @@ def locktask(function):
         lock_id = function.__name__ + "-" + str(object)
         acquire_lock = lambda: cache.add(lock_id, "true", LOCK_EXPIRE)
         release_lock = lambda: cache.delete(lock_id)
-        
-        if acquire_lock(): 
+
+        if acquire_lock():
             try:
                 logger.debug("Locked task: %s" % lock_id)
                 return function(object, *args, **kwargs)
@@ -32,5 +32,5 @@ def locktask(function):
             finally:
                 release_lock()
                 logger.debug("Unlocked task: %s" % lock_id)
-    
+
     return wrapper

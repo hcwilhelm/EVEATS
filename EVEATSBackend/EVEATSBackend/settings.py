@@ -1,5 +1,4 @@
 # Django settings for EVEATS project.
-
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -11,19 +10,19 @@ MANAGERS = ADMINS
 
 DATABASES = {
   'default': {
-    'ENGINE'    : 	'django.db.backends.mysql', 	# Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-    'NAME'      : 	'c0_eveats',                  # Or path to database file if using sqlite3.
-    'USER'      : 	'c0_eveats',                  # Not used with sqlite3.
-    'PASSWORD'  :   'eveats',	                    # Not used with sqlite3.
-    'HOST'      : 	'localhost',                	# Set to empty string for localhost. Not used with sqlite3.
-    'PORT'      : 	'3306',                     	# Set to empty string for default. Not used with sqlite3.
+    'ENGINE'    :       'django.db.backends.mysql',     # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+    'NAME'      :       'c0_eveats',                  # Or path to database file if using sqlite3.
+    'USER'      :       'c0_eveats',                  # Not used with sqlite3.
+    'PASSWORD'  :   'eveats',                       # Not used with sqlite3.
+    'HOST'      :       'localhost',                    # Set to empty string for localhost. Not used with sqlite3.
+    'PORT'      :       '3306',                         # Set to empty string for default. Not used with sqlite3.
     'OPTIONS': {
       'init_command': 'SET storage_engine=INNODB;',
     }
   },
 }
 
-# EVE API Connection URL 
+# EVE API Connection URL
 EVE_API_HOST = "api.eveonline.com"
 EVE_API_PORT = 443
 
@@ -190,7 +189,7 @@ LOGGING = {
       'maxBytes': 1024*1024*5, # 5 MB
       'backupCount': 7,
       'formatter':'verbose',
-    },  
+    },
     'requests': {
       'level':'DEBUG',
       'class':'logging.handlers.RotatingFileHandler',
@@ -226,4 +225,3 @@ LOGGING = {
     },
   }
 }
-

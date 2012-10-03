@@ -27,3 +27,7 @@ EVEATSFrontend/Resources/EveImageDump/**/*
 # Logging directory #
 #####################
 EVEATSBackend/logs/*
+
+# Python virtual env #
+######################
+EVEATSBackend/env/*

@@ -83,13 +83,13 @@ class invMarketGroups(models.Model):
         return unicode(self.marketGroupID)
 
     def findMarketGroupIDs(self):
-      list = [self.pk]
-      
-      for group in self.invmarketgroups_set.all():
-        list.append(group.pk)
-        list.extend(group.findMarketGroupIDs())
-        
-      return list
+        myList = [self.pk]
+
+        for group in self.invmarketgroups_set.all():
+            myList.append(group.pk)
+            myList.extend(group.findMarketGroupIDs())
+
+        return myList
 
 # =================
 # = invCategories =
@@ -160,160 +160,160 @@ class invFlags(models.Model):
 # ===============
 
 class staStations(models.Model):
-  stationID     = models.PositiveIntegerField(primary_key=True)
-  stationName   = models.CharField(max_length=100)
-  stationTypeID = models.ForeignKey('staStationTypes', db_column='stationTypeID')
-  solarSystemID = models.IntegerField('mapSolarSystems')
-  corporationID = models.ForeignKey('eve.Corporation', db_column='corporationID')
-  cachedUntil   = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+    stationID     = models.PositiveIntegerField(primary_key=True)
+    stationName   = models.CharField(max_length=100)
+    stationTypeID = models.ForeignKey('staStationTypes', db_column='stationTypeID')
+    solarSystemID = models.IntegerField('mapSolarSystems')
+    corporationID = models.ForeignKey('eve.Corporation', db_column='corporationID')
+    cachedUntil   = datetime.datetime.utcnow() + datetime.timedelta(days=1)
 
-  def expired(self):
-    return False
+    def expired(self):
+        return False
 
-  class Meta:
-    db_table = "staStations"
-    managed = False
+    class Meta:
+        db_table = "staStations"
+        managed = False
 
-  def __unicode__(self):
-    return unicode(self.stationID)
+    def __unicode__(self):
+        return unicode(self.stationID)
 
 # ===================
 # = staStationTypes =
 # ===================
 
 class staStationTypes(models.Model):
-  stationTypeID = models.IntegerField(primary_key=True)
+    stationTypeID = models.IntegerField(primary_key=True)
 
-  class Meta:
-    db_table = u'staStationTypes'
-    managed = False
+    class Meta:
+        db_table = u'staStationTypes'
+        managed = False
 
-  def __unicode__(self):
-    return unicode(self.stationID)
+    def __unicode__(self):
+        return unicode(self.stationID)
 
 class mapSolarSystems(models.Model):
-  solarSystemID = models.IntegerField(primary_key=True)
+    solarSystemID = models.IntegerField(primary_key=True)
 
-  class Meta:
-    db_table = u'mapSolarSystems'
-    managed = False
+    class Meta:
+        db_table = u'mapSolarSystems'
+        managed = False
 
 class mapRegions(models.Model):
-  regionID = models.IntegerField(primary_key=True)
+    regionID = models.IntegerField(primary_key=True)
 
-  class Meta:
-    db_table = u'mapRegions'
-    managed = False
+    class Meta:
+        db_table = u'mapRegions'
+        managed = False
 
 # ======================================================================================================
 # = dgmTables                                                                                          =
 # ======================================================================================================
 
 class dgmAttributeCategories(models.Model):
-  categoryID                          = models.IntegerField(primary_key=True)
-  categoryName                        = models.CharField(max_length=50, null=True)
-  categoryDescription                 = models.CharField(max_length=200, null=True)
-  
-  class Meta:
-    db_table  = "dgmAttributeCategories"
-    managed   = False
-    
-  def __unicode__(self):
-    return unicode(self.categoryID)
+    categoryID                          = models.IntegerField(primary_key=True)
+    categoryName                        = models.CharField(max_length=50, null=True)
+    categoryDescription                 = models.CharField(max_length=200, null=True)
+
+    class Meta:
+        db_table  = "dgmAttributeCategories"
+        managed   = False
+
+    def __unicode__(self):
+        return unicode(self.categoryID)
 
 class dgmAttributeTypes(models.Model):
-  attributeID                         = models.IntegerField(primary_key=True)
-  attributeName                       = models.CharField(max_length=100, null=True)
-  description                         = models.CharField(max_length=1000, null=True)
-  iconID                              = models.ForeignKey('eveIcons', db_column='iconID', null=True)
-  defaultValue                        = models.FloatField(null=True)
-  published                           = models.NullBooleanField()
-  displayName                         = models.CharField(max_length=100, null=True)
-  unitID                              = models.ForeignKey('eveUnits', db_column='unitID', null=True)
-  stackable                           = models.NullBooleanField()
-  highIsGood                          = models.NullBooleanField()
-  categoryID                          = models.ForeignKey('dgmAttributeCategories', db_column='categoryID', null=True)
-  
-  class Meta:
-    db_table  = "dgmAttributeTypes"
-    managed   = False
-    
-  def __unicode__(self):
-    return unicode(self.attributeID)
-    
+    attributeID                         = models.IntegerField(primary_key=True)
+    attributeName                       = models.CharField(max_length=100, null=True)
+    description                         = models.CharField(max_length=1000, null=True)
+    iconID                              = models.ForeignKey('eveIcons', db_column='iconID', null=True)
+    defaultValue                        = models.FloatField(null=True)
+    published                           = models.NullBooleanField()
+    displayName                         = models.CharField(max_length=100, null=True)
+    unitID                              = models.ForeignKey('eveUnits', db_column='unitID', null=True)
+    stackable                           = models.NullBooleanField()
+    highIsGood                          = models.NullBooleanField()
+    categoryID                          = models.ForeignKey('dgmAttributeCategories', db_column='categoryID', null=True)
+
+    class Meta:
+        db_table  = "dgmAttributeTypes"
+        managed   = False
+
+    def __unicode__(self):
+        return unicode(self.attributeID)
+
 class dgmEffects(models.Model):
-  effectID                            = models.IntegerField(primary_key=True)
-  effectName                          = models.CharField(max_length=400, null=True)
-  effectCategory                      = models.IntegerField(null=True)
-  preExpression                       = models.IntegerField(null=True)
-  postExpression                      = models.IntegerField(null=True)
-  description                         = models.CharField(max_length=1000, null=True)
-  guid                                = models.CharField(max_length=60, null=True)
-  iconID                              = models.ForeignKey('eveIcons', db_column='iconID', null=True)
-  isOffensive                         = models.NullBooleanField()
-  isAssistance                        = models.NullBooleanField()
-  durationAttributeID                 = models.ForeignKey('dgmAttributeTypes', related_name="durationAttribute_set", db_column='durationAttributeID', null=True)
-  trackingSpeedAttributeID            = models.ForeignKey('dgmAttributeTypes', related_name="trackingSpeedAttribute_set", db_column='trackingSpeedAttributeID', null=True)
-  dischargeAttributeID                = models.ForeignKey('dgmAttributeTypes', related_name="dischargeAttribute_set", db_column='dischargeAttributeID', null=True)
-  rangeAttributeID                    = models.ForeignKey('dgmAttributeTypes', related_name="rangeAttribute_set", db_column='rangeAttributeID', null=True)
-  falloffAttributeID                  = models.ForeignKey('dgmAttributeTypes', related_name="falloffAttribute_set", db_column='falloffAttributeID', null=True)
-  disallowAutoRepeat                  = models.NullBooleanField()
-  published                           = models.NullBooleanField()
-  displayName                         = models.CharField(max_length=100, null=True)
-  isWarpSafe                          = models.NullBooleanField()
-  rangeChance                         = models.NullBooleanField()
-  electronicChance                    = models.NullBooleanField()
-  propulsionChance                    = models.NullBooleanField()
-  distribution                        = models.IntegerField(null=True)
-  sfxName                             = models.CharField(max_length=20, null=True)
-  npcUsageChanceAttributeID           = models.ForeignKey('dgmAttributeTypes', related_name="npcUsageChanceAttribute_set", db_column='npcUsageChanceAttributeID', null=True)
-  npcActivationChanceAttributeID      = models.ForeignKey('dgmAttributeTypes', related_name="npcActivationChanceAttribute_set", db_column='npcActivationChanceAttributeID', null=True)
-  fittingUsageChanceAttributeID       = models.ForeignKey('dgmAttributeTypes', related_name="fittingUsageChanceAttribute_set", db_column='fittingUsageChanceAttributeID', null=True)
-  
-  class Meta:
-    db_table  = "dgmEffects"
-    managed   = False
-    
-  def __unicode__(self):
-    return unicode(self.effectID)
+    effectID                            = models.IntegerField(primary_key=True)
+    effectName                          = models.CharField(max_length=400, null=True)
+    effectCategory                      = models.IntegerField(null=True)
+    preExpression                       = models.IntegerField(null=True)
+    postExpression                      = models.IntegerField(null=True)
+    description                         = models.CharField(max_length=1000, null=True)
+    guid                                = models.CharField(max_length=60, null=True)
+    iconID                              = models.ForeignKey('eveIcons', db_column='iconID', null=True)
+    isOffensive                         = models.NullBooleanField()
+    isAssistance                        = models.NullBooleanField()
+    durationAttributeID                 = models.ForeignKey('dgmAttributeTypes', related_name="durationAttribute_set", db_column='durationAttributeID', null=True)
+    trackingSpeedAttributeID            = models.ForeignKey('dgmAttributeTypes', related_name="trackingSpeedAttribute_set", db_column='trackingSpeedAttributeID', null=True)
+    dischargeAttributeID                = models.ForeignKey('dgmAttributeTypes', related_name="dischargeAttribute_set", db_column='dischargeAttributeID', null=True)
+    rangeAttributeID                    = models.ForeignKey('dgmAttributeTypes', related_name="rangeAttribute_set", db_column='rangeAttributeID', null=True)
+    falloffAttributeID                  = models.ForeignKey('dgmAttributeTypes', related_name="falloffAttribute_set", db_column='falloffAttributeID', null=True)
+    disallowAutoRepeat                  = models.NullBooleanField()
+    published                           = models.NullBooleanField()
+    displayName                         = models.CharField(max_length=100, null=True)
+    isWarpSafe                          = models.NullBooleanField()
+    rangeChance                         = models.NullBooleanField()
+    electronicChance                    = models.NullBooleanField()
+    propulsionChance                    = models.NullBooleanField()
+    distribution                        = models.IntegerField(null=True)
+    sfxName                             = models.CharField(max_length=20, null=True)
+    npcUsageChanceAttributeID           = models.ForeignKey('dgmAttributeTypes', related_name="npcUsageChanceAttribute_set", db_column='npcUsageChanceAttributeID', null=True)
+    npcActivationChanceAttributeID      = models.ForeignKey('dgmAttributeTypes', related_name="npcActivationChanceAttribute_set", db_column='npcActivationChanceAttributeID', null=True)
+    fittingUsageChanceAttributeID       = models.ForeignKey('dgmAttributeTypes', related_name="fittingUsageChanceAttribute_set", db_column='fittingUsageChanceAttributeID', null=True)
+
+    class Meta:
+        db_table  = "dgmEffects"
+        managed   = False
+
+    def __unicode__(self):
+        return unicode(self.effectID)
 
 #
 # Altered table cause Django dosen't support combined primary key
 #
 
 class dgmTypeAttributes(models.Model):
-  typeAttributeID                     = models.IntegerField(primary_key=True)
-  typeID                              = models.ForeignKey('invTypes', db_column='typeID', null=True)
-  attributeID                         = models.ForeignKey('dgmAttributeTypes', db_column='attributeID', null=True)
-  valueInt                            = models.IntegerField(null=True)
-  valueFloat                          = models.FloatField(null=True)
-  
-  class Meta:
-    db_table = "dgmTypeAttributes"
-    managed   = False
-    
-  def __unicode__(self):
-    return unicode(self.typeID)
+    typeAttributeID                     = models.IntegerField(primary_key=True)
+    typeID                              = models.ForeignKey('invTypes', db_column='typeID', null=True)
+    attributeID                         = models.ForeignKey('dgmAttributeTypes', db_column='attributeID', null=True)
+    valueInt                            = models.IntegerField(null=True)
+    valueFloat                          = models.FloatField(null=True)
+
+    class Meta:
+        db_table = "dgmTypeAttributes"
+        managed   = False
+
+    def __unicode__(self):
+        return unicode(self.typeID)
 
 
 #
 # Altered table cause Django dosen't support combined primary key
-#    
+#
 
 class dgmTypeEffects(models.Model):
-  typeEffectID                        = models.IntegerField(primary_key=True)
-  typeID                              = models.ForeignKey('invTypes', db_column='typeID', null=True)
-  effectID                            = models.ForeignKey('dgmEffects', db_column='effectID', null=True)
-  isDefault                           = models.NullBooleanField()
-  
-  class Meta:
-    db_table = "dgmTypeEffects"
-    managed   = False
-  
-  def __unicode__(self):
-    return unicode(self.typeID)  
-        
-        
+    typeEffectID                        = models.IntegerField(primary_key=True)
+    typeID                              = models.ForeignKey('invTypes', db_column='typeID', null=True)
+    effectID                            = models.ForeignKey('dgmEffects', db_column='effectID', null=True)
+    isDefault                           = models.NullBooleanField()
+
+    class Meta:
+        db_table = "dgmTypeEffects"
+        managed   = False
+
+    def __unicode__(self):
+        return unicode(self.typeID)
+
+
 # ======================================================================================================
 # = eveTables                                                                                          =
 # ======================================================================================================
@@ -329,16 +329,16 @@ class eveIcons(models.Model):
 
     def __unicode__(self):
         return unicode(self.iconID)
-        
-class eveUnits(models.Model):
-  unitID                              = models.IntegerField(primary_key=True)
-  unitName                            = models.CharField(max_length=100, null=True)
-  displayName                         = models.CharField(max_length=50, null=True)
-  description                         = models.CharField(max_length=1000, null=True)
-  
-  class Meta:
-      db_table    = 'eveUnits'
-      managed     = False
 
-  def __unicode__(self):
-      return unicode(self.unitID)
+class eveUnits(models.Model):
+    unitID                              = models.IntegerField(primary_key=True)
+    unitName                            = models.CharField(max_length=100, null=True)
+    displayName                         = models.CharField(max_length=50, null=True)
+    description                         = models.CharField(max_length=1000, null=True)
+
+    class Meta:
+        db_table    = 'eveUnits'
+        managed     = False
+
+    def __unicode__(self):
+        return unicode(self.unitID)

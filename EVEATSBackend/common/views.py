@@ -12,13 +12,13 @@ from common.helper                  import func_logger as logger
 
 class HandleQuerySets(DjangoJSONEncoder):
     def default(self, obj):
-      
+
         if type(obj) == QuerySet:
             return serializers.serialize("python", obj, ensure_ascii=False)
-        
+
         if type(obj) == EmptyQuerySet:
             return serializers.serialize("python", obj, ensure_ascii=False)
-        
+
         return DjangoJSONEncoder.default(self, obj)
 
 #
@@ -33,7 +33,7 @@ class JSONResponse:
         self.message = message
         self.result = result
         self.taskID = taskID
-    
+
     def json(self):
         return simplejson.dumps(
             {"success": self.success, "message": self.message, "result": self.result, "taskID": self.taskID},
@@ -42,18 +42,18 @@ class JSONResponse:
 
 def authentificationError(request):
     response = HttpResponse(mimetype="application/json")
-    
+
     jsonResponse = JSONResponse(success=False, message="You are not logged in")
     response.write(jsonResponse.json())
-    
+
     return response
 
 def httpPostTest(request):
     response = HttpResponse(mimetype="application/json")
-    
+
     result = {"p1":request.POST["p1"], "p2":request.POST["p2"]}
-    
+
     jsonResponse = JSONResponse(success=True, result=result)
     response.write(jsonResponse.json())
-    
+
     return response

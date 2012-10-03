@@ -1,10 +1,10 @@
-# 
+#
 #  client.py
 #  Backend
-#  
+#
 #  Created by Hans Christian Wilhelm on 2012-02-10.
 #  Copyright 2012 scienceondope.org All rights reserved.
-# 
+#
 
 # =========================
 # = import python modules =
@@ -25,10 +25,10 @@ EVE_API_PORT = 446
 # ===================
 
 class EVEError(Exception):
-  
-  def __init__(self, code, error):
-    self.code   = code
-    self.error  = error
+
+    def __init__(self, code, error):
+        self.code   = code
+        self.error  = error
 
 # ==============================================
 # = Class EVEClient used to query the EVE API  =
@@ -36,19 +36,19 @@ class EVEError(Exception):
 # ==============================================
 
 class EVEClient(object):
-  
-  def __init__(self, apiKey):
-    self.apiKey = apiKey
-    
-  def getAPIKeyInfo(self):
-    action = "/account/APIKeyInfo.xml.aspx"
-    params = urllib.urlencode({'keyID':self.apiKey.keyID, 'vCode':self.apiKey.vCode})
-    header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-    
-    connection = httplib.HTTPSConnection(EVE_API_HOST, EVE_API_PORT)
-    connection.request("GET", action, params, header)
-    
-    xml = connection.getresponse().read()
-    connection.close()
-    
-    return xml
+
+    def __init__(self, apiKey):
+        self.apiKey = apiKey
+
+    def getAPIKeyInfo(self):
+        action = "/account/APIKeyInfo.xml.aspx"
+        params = urllib.urlencode({'keyID':self.apiKey.keyID, 'vCode':self.apiKey.vCode})
+        header = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+
+        connection = httplib.HTTPSConnection(EVE_API_HOST, EVE_API_PORT)
+        connection.request("GET", action, params, header)
+
+        xml = connection.getresponse().read()
+        connection.close()
+
+        return xml
