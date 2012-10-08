@@ -13,7 +13,7 @@ DATABASES = {
     'ENGINE'    :       'django.db.backends.mysql',     # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
     'NAME'      :       'c0_eveats',                  # Or path to database file if using sqlite3.
     'USER'      :       'c0_eveats',                  # Not used with sqlite3.
-    'PASSWORD'  :   'eveats',                       # Not used with sqlite3.
+    'PASSWORD'  :	'eveats',                       # Not used with sqlite3.
     'HOST'      :       'localhost',                    # Set to empty string for localhost. Not used with sqlite3.
     'PORT'      :       '3306',                         # Set to empty string for default. Not used with sqlite3.
     'OPTIONS': {
@@ -25,6 +25,9 @@ DATABASES = {
 # EVE API Connection URL
 EVE_API_HOST = "api.eveonline.com"
 EVE_API_PORT = 443
+
+# EMDR
+EMDR_SYNCINT = 60
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -151,6 +154,7 @@ TEMPLATE_DIRS = (
 
 INSTALLED_APPS = (
   'evedb',
+  'emdr',
   'eve',
   'accounts',
   'common',

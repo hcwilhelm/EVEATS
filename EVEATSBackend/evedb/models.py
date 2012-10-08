@@ -18,7 +18,6 @@ class invTypes(models.Model):
     groupID                 = models.ForeignKey('invGroups', null=True, db_column='groupID')
     typeName                = models.CharField(max_length=100)
     description             = models.CharField(max_length=3000)
-    radius                  = models.FloatField()
     mass                    = models.FloatField()
     volume                  = models.FloatField()
     capacity                = models.FloatField()

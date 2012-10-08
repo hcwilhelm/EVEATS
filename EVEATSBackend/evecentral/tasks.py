@@ -50,19 +50,20 @@ def updateMarketOrder(itemTypeId):
         deltaHours = int(round(delta.total_seconds() / 60, 0))
         hours = deltaHours if deltaHours > 1 else 1
 
-    action = "/eve/CharacterInfo.xml.aspx"
-    params = urllib.urlencode({'typeid': itemTypeId, 'sethours': hours})
+    action = "/api/quicklook"
+    params = urllib.urlencode({'typeid': itemTypeId, 'sethours': hours, 'setminQ': 1})
     xml = getXMLFromEveCentralAPI(action=action, params=params)
 
-    if xml is None:
-        logging.error("Unable to fetch itemID %s from EVE Central" % itemTypeId)
-    else:
-        logging.info("Got data for itemID %s" % itemTypeId)
-
+    error = xml.find("error")
+    if error is not None:
+        errorMessage  = error.text
+        logger.warning("Error fetching marketOrders from EVE Central API: '%s'" % (errorMessage))
+        return False
+    
+    sellOrders = xml.findall("evec_api/quicklook/sell_orders/order")
+    logger.info("Fetched %s selling orders from EVE Central" % len(sellOrders))
+    buyOrders = xml.findall("evec_api/quicklook/buy_orders/order")
+    logger.info("Fetched %s buying orders from EVE Central" % len(buyOrders))    
+    
     lastFetch.lastRun = now
     lastFetch.save()
-
-    if not created:
-        logger.warning("Delete must be implemented here")
-
-    logger.error("Not implemented")
