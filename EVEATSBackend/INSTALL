@@ -1,5 +1,6 @@
 
 Setting up virtualenv:
 	1. Install python-virtualenv
-	2. Run: python make-bootstrap.py > bootstrap.py
+	2. Run: python create-bootstrap.py > bootstrap.py
 	3. Run: python bootstrap.py --distribute <your virtualenv directory>
+
